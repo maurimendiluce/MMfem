@@ -304,7 +304,7 @@ function LoadVector(f,tri)
     p,t,b = mesh_data(tri)
     nn = size(p)[1]
     nt = size(t)[1]
-    F = spzeros(nn,1) 
+    F = zeros(nn,1) 
     for k=1:nt 
         elem = t[k,:]
         local_vector = [quad(v->fβ(f,1,v,p,elem),p,elem),quad(v->fβ(f,2,v,p,elem),p,elem),quad(v->fβ(f,3,v,p,elem),p,elem)]

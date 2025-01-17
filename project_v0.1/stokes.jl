@@ -37,16 +37,37 @@ A = μ*Stiffnes_Δ(mesh)
 Bx,By = Stiffnes_div(mesh)
 G = Stiffnes_G(mesh)
 
-K = [A spzeros(size(p,1),size(p,1)) -Bx';spzeros(size(p,1),size(p,1)) A -By';-Bx -By -G]
+K₀ = [A spzeros(size(p,1),size(p,1)) -Bx';spzeros(size(p,1),size(p,1)) A -By';-Bx -By -G]
 #uₕ_1 = uₕ[1:size(p,1)]
 #uₕ_2 = uₕ[size(p,1)+1:2*size(p,1)]
 
-F1 = LoadVector(f1,mesh)
-F2 = LoadVector(f2,mesh)
-F = [F1;F2;spzeros(size(p,1))]
+F₀1 = LoadVector(f1,mesh)
+F₀2 = LoadVector(f2,mesh)
+F₀ = [F₀1;F₀2;zeros(size(p,1))]
 
 #Fijamos nodo de la presión para incorporar promedio 0
 node_p = NodesFree[1]
+NodesFree_p = setdiff(1:size(p,1),node_p)
 pₕ[node_p] = 0
 
-F = F - K*[uₕ;pₕ]
+F₀ = F₀ - K₀*[uₕ;pₕ]
+
+#armo matriz de rigidez
+K = [A[NodesFree,NodesFree] spzeros(length(NodesFree),length(NodesFree)) -Bx[NodesFree_p,NodesFree]'; 
+    spzeros(length(NodesFree),length(NodesFree)) A[NodesFree,NodesFree] -By[NodesFree_p,NodesFree]';
+    -Bx[NodesFree_p,NodesFree] -By[NodesFree_p,NodesFree] G[NodesFree_p,NodesFree_p]]
+
+F1 = F₀[NodesFree]
+F2 = F₀[NodesFree.+size(p,1)]
+F3 = F₀[NodesFree_p.+2*size(p,1)] 
+F = [F1;F2;F3]
+
+K = Matrix(K)
+
+sol = K\F
+uₕ[NodesFree] = sol[1:length(NodesFree)]
+uₕ[NodesFree.+size(p,1)] = sol[length(NodesFree)+1:2*length(NodesFree)]  
+
+Uₕ = [uₕ[1:size(p,1)] uₕ[size(p,1)+1:2*size(p,1)]]
+
+scalar_plot(uₕ[1:size(p,1)],mesh)
