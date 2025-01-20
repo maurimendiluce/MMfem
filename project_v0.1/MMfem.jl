@@ -161,14 +161,23 @@ function ∇β(j,points,triangle)
     end
 end
 
+function area_triangle(points,elem)
+    vert=points[elem,:]
+    x1,x2,x3=vert[:,1]
+    y1,y2,y3=vert[:,2]
+    return abs(((x2-x1)*(y3-y1)+(y1-y2)*(x3-x1)))/2
+end
+
 #cuatraturas
 """
     quad(f,points,triangle;type="midpoints")
 
 """
 function quad(f,points,triangle;type="midpoints")
-    v1,v2,v3=points[triangle[1],:],points[triangle[2],:],points[triangle[3],:]
-    area_T = abs(det([v2-v1 v3-v1])/2)
+    v1 = points[triangle[1],:]
+    v2 = points[triangle[2],:]
+    v3 = points[triangle[3],:]
+    area_T = area_triangle(points,triangle)
     if type == "midpoints"
         return (area_T/3)*(f((v1+v2)/2)+f((v1+v3)/2)+f((v2+v3)/2))
     end
@@ -190,8 +199,10 @@ function Stiffnes_Δ(tri)
     A = spzeros(nn,nn)
     for k=1:nt
         elem = t[k,:]
-        v1,v2,v3=p[elem[1],:],p[elem[2],:],p[elem[3],:]
-        area_k = abs(det([v2-v1 v3-v1])/2)
+        v1 = p[elem[1],:]
+        v2 = p[elem[2],:]
+        v3 = p[elem[3],:]
+        area_k = area_triangle(p,t[k,:])
         M = zeros(2,3)
         M[:,1] = ∇β(1,p,elem)
         M[:,2] = ∇β(2,p,elem)
@@ -206,28 +217,30 @@ function int_div_x(i,j,p,elem) #beta*∇ₓbeta
     v₁ = p[elem[1],:]
     v₂ = p[elem[2],:]
     v₃ = p[elem[3],:]
-    B = [v₂-v₁ v₃-v₁]
+    #B = [v₂-v₁ v₃-v₁]
+    area_T = area_triangle(p,elem)
     βₓ = ∇β(j,p,elem)[1]
 
     a₁ = β(i,0.5*(v₁+v₂),p,elem)*βₓ
     a₂ = β(i,0.5*(v₁+v₃),p,elem)*βₓ
     a₃ = β(i,0.5*(v₂+v₃),p,elem)*βₓ
 
-    return (a₁+a₂+a₃)*abs(det(B))/6
+    return (area_T/3)*(a₁+a₂+a₃)
 end
 
 function int_div_y(i,j,p,elem) #beta*∇_y beta
     v₁ = p[elem[1],:]
     v₂ = p[elem[2],:]
     v₃ = p[elem[3],:]
-    B = [v₂-v₁ v₃-v₁]
+    #B = [v₂-v₁ v₃-v₁]
+    area_T = area_triangle(p,elem)
     β_y = ∇β(j,p,elem)[2]
 
     a₁ = β(i,0.5*(v₁+v₂),p,elem)*β_y
     a₂ = β(i,0.5*(v₁+v₃),p,elem)*β_y
     a₃ = β(i,0.5*(v₂+v₃),p,elem)*β_y
 
-    return (a₁+a₂+a₃)*abs(det(B))/6
+    return (area_T/3)*(a₁+a₂+a₃)
 end
 
 function Stiffnes_div(tri)
@@ -259,13 +272,14 @@ function int_G(i,j,p,elem)
     v₁ = p[elem[1],:]
     v₂ = p[elem[2],:]
     v₃ = p[elem[3],:]
-    B = [v₂-v₁ v₃-v₁]
+    #B = [v₂-v₁ v₃-v₁]
+    area_T = area_triangle(p,elem)
     Π = 1/3
     a₁ = (β(i,0.5*(v₁+v₂),p,elem)-Π)*(β(j,0.5*(v₁+v₂),p,elem)-Π)
     a₂ = (β(i,0.5*(v₁+v₃),p,elem)-Π)*(β(j,0.5*(v₁+v₃),p,elem)-Π)
     a₃ = (β(i,0.5*(v₂+v₃),p,elem)-Π)*(β(j,0.5*(v₂+v₃),p,elem)-Π)
 
-    return (a₁+a₂+a₃)*abs(det(B))/6
+    return (area_T/3)*(a₁+a₂+a₃)
 end
 
 function Stiffnes_G(tri) #matriz de estabilizacion
@@ -292,26 +306,56 @@ end
    fβ(f,j,v,points,triangle)
 
 """ 
-function fβ(f,j,v,points,triangle)
-    return f(v)*β(j,v,points,triangle)
-end
+#function fβ(f,j,v,points,triangle)
+#    return f(v)*β(j,v,points,triangle)
+#end
 
 """
     LoadVector(f,tri)
 
 """
+#function LoadVector(f,tri)
+#    p,t,b = mesh_data(tri)
+#    nn = size(p)[1]
+#    nt = size(t)[1]
+#    F = zeros(nn,1) 
+#    for k=1:nt 
+#        elem = t[k,:]
+#        local_vector = [quad(v->fβ(f,1,v,p,elem),p,elem),quad(v->fβ(f,2,v,p,elem),p,elem),quad(v->fβ(f,3,v,p,elem),p,elem)]
+#        F[elem] = F[elem]+local_vector
+#    end
+#    return F
+#end
+
+function integra_f(f,i,points,elem)
+    
+    v₁ = p[elem[1],:]
+    v₂ = p[elem[2],:]
+    v₃ = p[elem[3],:]
+    a1=f(0.5*(v₁+v₂))*β(i,0.5*(v₁+v₂),points,elem)
+    a2=f(0.5*(v₁+v₃))*β(i,0.5*(v₁+v₃),points,elem)
+    a3=f(0.5*(v₂+v₃))*β(i,0.5*(v₂+v₃),points,elem)
+    area_T = area_triangle(points,elem) 
+        
+    return (area_T/3)*(a1+a2+a3)
+end
+
 function LoadVector(f,tri)
     p,t,b = mesh_data(tri)
-    nn = size(p)[1]
-    nt = size(t)[1]
-    F = zeros(nn,1) 
-    for k=1:nt 
-        elem = t[k,:]
-        local_vector = [quad(v->fβ(f,1,v,p,elem),p,elem),quad(v->fβ(f,2,v,p,elem),p,elem),quad(v->fβ(f,3,v,p,elem),p,elem)]
-        F[elem] = F[elem]+local_vector
+    F = zeros(2*size(p)[1])
+    
+    for k=1:size(t)[1]
+        elem=t[k,:]
+        for i=1:3
+            F[elem[i]]=F[elem[i]]+integra_f(f,i, p, elem)[1]
+            F[size(p)[1]+elem[i]]=F[size(p)[1]+elem[i]]+integra_f(f,i, p, elem)[2]
+        end
     end
+    F= [F;zeros(size(p)[1])]      
     return F
 end
+
+
 
 #Boundary conditions
 """
