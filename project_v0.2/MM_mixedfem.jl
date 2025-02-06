@@ -1,6 +1,6 @@
 #Packege
 
-using DelaunayTriangulation, CairoMakie, LinearAlgebra, SparseArrays, Plots
+using DelaunayTriangulation, CairoMakie, LinearAlgebra, SparseArrays, Plots, GMT
 
 #### Mesh functions ####
 

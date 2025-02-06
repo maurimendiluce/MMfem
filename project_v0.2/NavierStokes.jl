@@ -7,7 +7,7 @@ print("------------------------------------", "\n")
 
 #mesh
 
-mesh,triangulation = create_mesh(0,1,0,1,24,graph=false)
+mesh,triangulation = create_mesh(0,1,0,1,32,graph=false)
 
 #data
 f(v)=[0,0]
@@ -49,6 +49,9 @@ uₕ_1,uₕ_2,pₕ = solve_NavierStokes(f,u₀,mesh)
 
 
 #Plots
+
+trisurf([mesh.nodes[:,1] mesh.nodes[:,2] pₕ], show=true)
+#quiver(mesh.nodes[:,1], mesh.nodes[:,2], uₕ_1, uₕ_2, fill=:black, lc=:red, show=true)
 
 #contour_plot(triangulation,pₕ)
 #quiver_plot(mesh,uₕ_1,uₕ_2)
