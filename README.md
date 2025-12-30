@@ -1,10 +1,12 @@
-# Mathematical modeling and numerical simulations for mitigating indoor radon concentration
+# MMFem
 
-Libreria para simular la ventilación de interiores que contienen concentración de Radon.
+Libreria para resolver el problema de Navier-Stokes mediante el método de elementos finitos.
 
 ## Estructura
-- geometry.py: definición del dominio
-- problem.py: formulación variacional
+- triangulation.py: definición del dominio
+- FEMSpaces.py: 
+- solvers.py:
+- problems.py: formulación variacional
 - run.py: script de ejecución
 
 ## Requisitos
