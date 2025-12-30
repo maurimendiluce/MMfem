@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Documentation – utils</title>
+    <link rel="stylesheet" href="academic.css">
+</head>
+
+<body>
+
+<header>
+    <h1>MM_lib</h1>
+    <p class="subtitle">Auxiliary routines for FEM / NGSolve</p>
+</header>
+
+<div class="layout">
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ul>
+    <li><a href="#-etiquetas">etiquetas(mesh)</a></li>
+    <li><a href="#-rectangle_mesh">rectangle_mesh(a,b,c,d,h)</a></li>
+  </ul>
+</nav>
+
+<main>
+<tr><td class="decor functions-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><dl><dt><a name="-etiquetas"><strong>etiquetas</strong></a>(mesh)</dt><dd><span class="code">Devuelve&nbsp;las&nbsp;etiquetas&nbsp;de&nbsp;borde&nbsp;del&nbsp;dominio.<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+mesh&nbsp;:&nbsp;netgen&nbsp;mesh<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Dominio&nbsp;discretizado.<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+labels&nbsp;:&nbsp;str<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Etiquetas&nbsp;de&nbsp;borde.<br>
+&nbsp;<br>
+Examples<br>
+--------<br>
+&gt;&gt;&gt;&nbsp;mesh&nbsp;=&nbsp;<a href="#-rectangle_mesh">rectangle_mesh</a>(0,&nbsp;1,&nbsp;0,&nbsp;1,&nbsp;0.1)<br>
+&gt;&gt;&gt;&nbsp;<a href="#-etiquetas">etiquetas</a>(mesh)<br>
+'left|right|top|bottom'</span></dd></dl>
+ <dl><dt><a name="-rectangle_mesh"><strong>rectangle_mesh</strong></a>(a, b, c, d, h)</dt><dd><span class="code">Genera&nbsp;una&nbsp;malla&nbsp;para&nbsp;el&nbsp;rectangulo&nbsp;[a,b]x[c,d]<br>
+&nbsp;<br>
+Parameters<br>
+----------<br>
+a,b,c,d&nbsp;=&nbsp;vertices<br>
+h&nbsp;=&nbsp;tamaño&nbsp;de&nbsp;la&nbsp;malla<br>
+&nbsp;<br>
+Returns<br>
+-------<br>
+mesh:&nbsp;objeto&nbsp;de&nbsp;netgen</span></dd></dl>
+</td></tr></table><p>
+<!--<table class="section">
+<tr class="decor data-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Data</strong></td></tr>-->
+    
+<!--<tr><td class="decor data-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><strong>__all__</strong> = ['rectangle_mesh', 'etiquetas']</td></tr></table>-->
+
+</main>
+
+</div>
+
+<footer>
+    <hr>
+    <p>Documentation generated automatically.</p>
+</footer>
+
+</body>
+</html>
