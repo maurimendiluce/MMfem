@@ -17,7 +17,9 @@ El proyecto está organizado en tres componentes principales:
 * ``FEMSpaces.py``:------
 * ``problems.py``: ----
 * ``solvers.py``: ----
+* ``adapt.py``: ----
 * ``run.py``: script principal que ejecuta una simulación completa.
+* ``run_adapt.py``: script principal que ejecuta el método adaptativo
 
 Modelos matemáticos
 -------------------
@@ -38,6 +40,10 @@ Ejecución
 
    python run.py
 
+.. code-block:: bash
+
+   python run_adapt.py
+
 Referencias
 -----------
 
@@ -52,6 +58,7 @@ Referencias
    FEMSpaces
    problems
    solvers
+   adapt
 
 
 Indices and tables

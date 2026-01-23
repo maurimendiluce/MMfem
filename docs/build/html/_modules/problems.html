@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>problems &mdash; NavierStokes  documentation</title>
+  <title>problems &mdash; MMFem  documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=92fd9be5" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
@@ -29,7 +29,7 @@
           
           
           <a href="../index.html" class="icon icon-home">
-            NavierStokes
+            MMFem
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -45,6 +45,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../FEMSpaces.html">FEM Spaces</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../problems.html">Problems</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../solvers.html">Solvers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../adapt.html">Adaptative</a></li>
 </ul>
 
         </div>
@@ -53,7 +54,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">NavierStokes</a>
+          <a href="../index.html">MMFem</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -79,7 +80,15 @@
 <div class="viewcode-block" id="Stokes">
 <a class="viewcode-back" href="../problems.html#problems.Stokes">[docs]</a>
 <span class="k">def</span> <span class="nf">Stokes</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span><span class="n">X</span><span class="p">,</span><span class="n">etiq_dirich</span><span class="p">,</span><span class="n">uD</span><span class="p">,</span><span class="n">nu</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Docstring for Stokes</span>
+<span class="sd">    </span>
+<span class="sd">    :param mesh: Description</span>
+<span class="sd">    :param X: Description</span>
+<span class="sd">    :param etiq_dirich: Description</span>
+<span class="sd">    :param uD: Description</span>
+<span class="sd">    :param nu: Description</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">p</span><span class="p">,</span><span class="n">lam</span><span class="p">),</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">q</span><span class="p">,</span><span class="n">mu</span><span class="p">)</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">TnT</span><span class="p">()</span>
     <span class="n">stokes</span> <span class="o">=</span> <span class="n">BilinearForm</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
     <span class="n">stokes</span> <span class="o">+=</span>  <span class="p">(</span><span class="n">nu</span><span class="o">*</span><span class="n">InnerProduct</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="n">grad</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="o">-</span> <span class="n">div</span><span class="p">(</span><span class="n">u</span><span class="p">)</span><span class="o">*</span><span class="n">q</span> <span class="o">+</span> <span class="n">div</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">*</span><span class="n">p</span><span class="o">-</span><span class="n">lam</span><span class="o">*</span><span class="n">q</span><span class="o">-</span><span class="n">mu</span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="o">*</span><span class="n">dx</span>
@@ -104,7 +113,17 @@
 <div class="viewcode-block" id="Picard">
 <a class="viewcode-back" href="../problems.html#problems.Picard">[docs]</a>
 <span class="k">def</span> <span class="nf">Picard</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span><span class="n">X</span><span class="p">,</span><span class="n">u_old</span><span class="p">,</span><span class="n">etiq_dirich</span><span class="p">,</span><span class="n">uD</span><span class="p">,</span><span class="n">nu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">lin</span><span class="o">=</span><span class="s2">&quot;convectivo&quot;</span><span class="p">):</span>
-    
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Docstring for Picard</span>
+<span class="sd">    </span>
+<span class="sd">    :param mesh: Description</span>
+<span class="sd">    :param X: Description</span>
+<span class="sd">    :param u_old: Description</span>
+<span class="sd">    :param etiq_dirich: Description</span>
+<span class="sd">    :param uD: Description</span>
+<span class="sd">    :param nu: Description</span>
+<span class="sd">    :param lin: Description</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">p</span><span class="p">,</span><span class="n">lam</span><span class="p">),</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">q</span><span class="p">,</span><span class="n">mu</span><span class="p">)</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">TnT</span><span class="p">()</span>
     <span class="n">NSlin</span> <span class="o">=</span> <span class="n">BilinearForm</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">lin</span> <span class="o">==</span> <span class="s2">&quot;convectivo&quot;</span><span class="p">:</span>
@@ -136,7 +155,16 @@
 <div class="viewcode-block" id="Newton">
 <a class="viewcode-back" href="../problems.html#problems.Newton">[docs]</a>
 <span class="k">def</span> <span class="nf">Newton</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span><span class="n">X</span><span class="p">,</span><span class="n">u_old</span><span class="p">,</span><span class="n">etiq_dirich</span><span class="p">,</span><span class="n">uD</span><span class="p">,</span><span class="n">nu</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-    
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Docstring for Newton</span>
+<span class="sd">    </span>
+<span class="sd">    :param mesh: Description</span>
+<span class="sd">    :param X: Description</span>
+<span class="sd">    :param u_old: Description</span>
+<span class="sd">    :param etiq_dirich: Description</span>
+<span class="sd">    :param uD: Description</span>
+<span class="sd">    :param nu: Description</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">p</span><span class="p">,</span><span class="n">lam</span><span class="p">),</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">q</span><span class="p">,</span><span class="n">mu</span><span class="p">)</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">TnT</span><span class="p">()</span>
     <span class="n">NSlin</span> <span class="o">=</span> <span class="n">BilinearForm</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
     <span class="n">conv</span> <span class="o">=</span> <span class="n">InnerProduct</span><span class="p">(</span><span class="n">Grad</span><span class="p">(</span><span class="n">u</span><span class="p">)</span><span class="o">*</span><span class="n">u_old</span><span class="p">,</span><span class="n">v</span><span class="p">)</span><span class="o">*</span><span class="n">dx</span><span class="o">+</span><span class="n">InnerProduct</span><span class="p">(</span><span class="n">Grad</span><span class="p">(</span><span class="n">u_old</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="p">,</span><span class="n">v</span><span class="p">)</span><span class="o">*</span><span class="n">dx</span><span class="o">-</span><span class="n">InnerProduct</span><span class="p">(</span><span class="n">Grad</span><span class="p">(</span><span class="n">u_old</span><span class="p">)</span><span class="o">*</span><span class="n">u_old</span><span class="p">,</span><span class="n">v</span><span class="p">)</span><span class="o">*</span><span class="n">dx</span>

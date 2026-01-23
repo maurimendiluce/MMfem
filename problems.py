@@ -3,7 +3,15 @@ from triangulation import *
 from FEMSpaces import *
 
 def Stokes(mesh,X,etiq_dirich,uD,nu=1):
-
+    """
+    Docstring for Stokes
+    
+    :param mesh: Description
+    :param X: Description
+    :param etiq_dirich: Description
+    :param uD: Description
+    :param nu: Description
+    """
     (u,p,lam), (v,q,mu) = X.TnT()
     stokes = BilinearForm(X)
     stokes +=  (nu*InnerProduct(grad(u), grad(v)) - div(u)*q + div(v)*p-lam*q-mu*p)*dx
@@ -25,7 +33,17 @@ def Stokes(mesh,X,etiq_dirich,uD,nu=1):
     return gf
 
 def Picard(mesh,X,u_old,etiq_dirich,uD,nu=1,lin="convectivo"):
+    """
+    Docstring for Picard
     
+    :param mesh: Description
+    :param X: Description
+    :param u_old: Description
+    :param etiq_dirich: Description
+    :param uD: Description
+    :param nu: Description
+    :param lin: Description
+    """
     (u,p,lam), (v,q,mu) = X.TnT()
     NSlin = BilinearForm(X)
     if lin == "convectivo":
@@ -54,7 +72,16 @@ def Picard(mesh,X,u_old,etiq_dirich,uD,nu=1,lin="convectivo"):
     return gf
 
 def Newton(mesh,X,u_old,etiq_dirich,uD,nu=1):
+    """
+    Docstring for Newton
     
+    :param mesh: Description
+    :param X: Description
+    :param u_old: Description
+    :param etiq_dirich: Description
+    :param uD: Description
+    :param nu: Description
+    """
     (u,p,lam), (v,q,mu) = X.TnT()
     NSlin = BilinearForm(X)
     conv = InnerProduct(Grad(u)*u_old,v)*dx+InnerProduct(Grad(u_old)*u,v)*dx-InnerProduct(Grad(u_old)*u_old,v)*dx

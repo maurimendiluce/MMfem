@@ -48,6 +48,7 @@
 <li class="toctree-l1"><a class="reference internal" href="FEMSpaces.html">FEM Spaces</a></li>
 <li class="toctree-l1"><a class="reference internal" href="problems.html">Problems</a></li>
 <li class="toctree-l1"><a class="reference internal" href="solvers.html">Solvers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="adapt.html">Adaptative</a></li>
 </ul>
 
         </div>
@@ -85,7 +86,9 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">FEMSpaces.py</span></code>:——</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">problems.py</span></code>: —-</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">solvers.py</span></code>: —-</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adapt.py</span></code>: —-</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">run.py</span></code>: script principal que ejecuta una simulación completa.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">run_adapt.py</span></code>: script principal que ejecuta el método adaptativo</p></li>
 </ul>
 </section>
 <section id="modelos-matematicos">
@@ -100,6 +103,9 @@
 <section id="ejecucion">
 <h2>Ejecución<a class="headerlink" href="#ejecucion" title="Link to this heading"></a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>run.py
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>run_adapt.py
 </pre></div>
 </div>
 </section>
@@ -130,6 +136,14 @@
 <li class="toctree-l1"><a class="reference internal" href="solvers.html">Solvers</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html#solvers.newton_iter"><code class="docutils literal notranslate"><span class="pre">newton_iter()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="solvers.html#solvers.picard_iter"><code class="docutils literal notranslate"><span class="pre">picard_iter()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="solvers.html#solvers.picard_iter_adapt"><code class="docutils literal notranslate"><span class="pre">picard_iter_adapt()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="adapt.html">Adaptative</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="adapt.html#adapt.SolveEstimeMark"><code class="docutils literal notranslate"><span class="pre">SolveEstimeMark()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="adapt.html#adapt.adaptative_method"><code class="docutils literal notranslate"><span class="pre">adaptative_method()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="adapt.html#adapt.order"><code class="docutils literal notranslate"><span class="pre">order()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="adapt.html#adapt.results"><code class="docutils literal notranslate"><span class="pre">results()</span></code></a></li>
 </ul>
 </li>
 </ul>

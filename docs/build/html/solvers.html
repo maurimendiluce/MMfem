@@ -19,6 +19,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Adaptative" href="adapt.html" />
     <link rel="prev" title="Problems" href="problems.html" /> 
 </head>
 
@@ -49,8 +50,10 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Solvers</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#solvers.newton_iter"><code class="docutils literal notranslate"><span class="pre">newton_iter()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#solvers.picard_iter"><code class="docutils literal notranslate"><span class="pre">picard_iter()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#solvers.picard_iter_adapt"><code class="docutils literal notranslate"><span class="pre">picard_iter_adapt()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="adapt.html">Adaptative</a></li>
 </ul>
 
         </div>
@@ -82,12 +85,55 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="solvers.newton_iter">
 <span class="sig-prename descclassname"><span class="pre">solvers.</span></span><span class="sig-name descname"><span class="pre">newton_iter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">etiq_dirich</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uD</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/solvers.html#newton_iter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#solvers.newton_iter" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Docstring for newton_iter</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> – Description</p></li>
+<li><p><strong>X</strong> – Description</p></li>
+<li><p><strong>etiq_dirich</strong> – Description</p></li>
+<li><p><strong>uD</strong> – Description</p></li>
+<li><p><strong>nu</strong> – Description</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="solvers.picard_iter">
 <span class="sig-prename descclassname"><span class="pre">solvers.</span></span><span class="sig-name descname"><span class="pre">picard_iter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">etiq_dirich</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uD</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">termino_conv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'convectivo'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/solvers.html#picard_iter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#solvers.picard_iter" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Docstring for picard_iter</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> – Description</p></li>
+<li><p><strong>X</strong> – Description</p></li>
+<li><p><strong>etiq_dirich</strong> – Description</p></li>
+<li><p><strong>uD</strong> – Description</p></li>
+<li><p><strong>nu</strong> – Description</p></li>
+<li><p><strong>termino_conv</strong> – Description</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="solvers.picard_iter_adapt">
+<span class="sig-prename descclassname"><span class="pre">solvers.</span></span><span class="sig-name descname"><span class="pre">picard_iter_adapt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">etiq_dirich</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uD</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">termino_conv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'convectivo'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/solvers.html#picard_iter_adapt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#solvers.picard_iter_adapt" title="Link to this definition"></a></dt>
+<dd><p>Docstring for picard_iter_adapt</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> – Description</p></li>
+<li><p><strong>X</strong> – Description</p></li>
+<li><p><strong>etiq_dirich</strong> – Description</p></li>
+<li><p><strong>uD</strong> – Description</p></li>
+<li><p><strong>nu</strong> – Description</p></li>
+<li><p><strong>termino_conv</strong> – Description</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 
@@ -96,6 +142,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="problems.html" class="btn btn-neutral float-left" title="Problems" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="adapt.html" class="btn btn-neutral float-right" title="Adaptative" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

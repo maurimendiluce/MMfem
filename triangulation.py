@@ -33,6 +33,40 @@ def rectangle_mesh(a,b,c,d,h):
 
     return mesh
 
+
+def L_mesh(h):
+    """
+    Genera una malla de tipo L: [0,10]x[-0.5,1]\[0,4]x[-0.5,0]
+
+    Parameters
+    ----------
+    h = tamaño de la malla
+
+    Returns
+    -------
+    mesh: objeto de netgen
+    Examples
+    --------
+    >>> mesh = L_mesh(0.1)
+    """
+    geo = geom2d.SplineGeometry()
+    p1 = geo.AppendPoint (0,0)
+    p2 = geo.AppendPoint (4,0)
+    p3 = geo.AppendPoint (4,-0.5)
+    p4 = geo.AppendPoint (10,-0.5)
+    p5 = geo.AppendPoint (10,1)
+    p6 = geo.AppendPoint (0,1)
+
+    geo.Append (["line", p1, p2],bc = "side")
+    geo.Append (["line", p2, p3],bc = "side")
+    geo.Append (["line", p3, p4],bc = "side")
+    geo.Append (["line", p4, p5],bc = "flow")
+    geo.Append (["line", p5, p6],bc = "side")
+    geo.Append (["line", p6, p1],bc = "flow_out")
+
+    mesh = Mesh(geo.GenerateMesh(maxh=h))
+    return mesh
+
 def etiquetas(mesh):
     """
     Devuelve las etiquetas de borde del dominio.
