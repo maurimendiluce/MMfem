@@ -49,13 +49,13 @@ def SolveEstimeMark(mesh,etiqueta_dirichlet,uD,theta=0.7, convex = 0):
         laplaciano_1 = Trace(uh_1.Operator("hesse"))
         convect_0 = uh_0*grad(uh_0)[0]+uh_1*grad(uh_0)[1]
         convect_1 = uh_0*grad(uh_1)[0]+uh_1*grad(uh_1)[1]
-        estima1 = (h**6)*((laplaciano_0-ph_x-convect_0)**4+(laplaciano_1-ph_y-convect_1)**4)*dx
+        estima1 = (h**(20/3))*((laplaciano_0-ph_x-convect_0)**4+(laplaciano_1-ph_y-convect_1)**4)*dx
 
         uh_0_x = grad(uh_0)[0]
         uh_1_y = grad(uh_1)[1]
-        estima2 = (h**2)*(uh_0_x+uh_1_y)**4*dx
+        estima2 = (uh_0_x+uh_1_y)**4*dx
         
-        jump = (h**2)*( (grad(uh_0)-grad(uh_0).Other())*n )**4 *dx(element_vb=BND)+(h**2)*( (grad(uh_1)-grad(uh_1).Other())*n )**4 *dx(element_vb=BND)
+        jump = (h**(11/3))*( (grad(uh_0)-grad(uh_0).Other())*n )**4 *dx(element_vb=BND)+(h**2)*( (grad(uh_1)-grad(uh_1).Other())*n )**4 *dx(element_vb=BND)
         
         eta = Integrate(estima1+estima2+jump,mesh,element_wise=True)
 
