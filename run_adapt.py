@@ -12,19 +12,23 @@ print("----------------------------------------------------------------")
 example = int(input("Convexo [0] | No convexo [1]:"))
 if example == 0:
     mesh = rectangle_mesh(0,1,0,1,0.5)
+    et = etiquetas(mesh)
+    #etiquetas_dirichlet = dirichlet_sides(mesh,)
     cant_ref = int(input("Cantidad de refinamientos: "))
     et_dirichlet = "top"
     uD = CF((1,0))
-    datos = adaptative_method(cant_ref,mesh,et_dirichlet,uD,theta=0.7)
+    datos = adaptative_method(cant_ref,mesh,et,et_dirichlet,uD,theta=0.7)
     order(datos)
     results(datos)
 
 if example == 1:
     mesh = L_mesh(0.4)
+    et = etiquetas(mesh)
+    et = dirichlet_sides(mesh,"flow_out")
     cant_ref = int(input("Cantidad de refinamientos: "))
-    et_dirichlet = "flow"
-    uD = CF((-1,0))
-    datos = adaptative_method(cant_ref,mesh,et_dirichlet,uD,theta=0.5)
+    et_dirichlet = "flow_in"
+    uD = CF((1,0))
+    datos = adaptative_method(cant_ref,mesh,et,et_dirichlet,uD,theta=0.7)
     order(datos)
     results(datos)
 

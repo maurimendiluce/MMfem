@@ -10,10 +10,10 @@ print("--------------------------------------------------------------")
 #print("\n")
 
 mesh = rectangle_mesh(0,1,0,1,0.05)
-et_dirichlet = "top"
+et_uD = "top"
 uD = CF((1,0))
-X = taylor_hood(mesh)
-gf_NS = picard_iter(mesh,X,et_dirichlet,uD,nu=0.01)
+X = taylor_hood(mesh,etiquetas(mesh))
+gf_NS = picard_iter(mesh,X,et_uD,uD,nu=0.01)
 uh = gf_NS.components[0]
 
 graficar = input("¿Desea graficar?: Sí [y] | No [n]")

@@ -3,19 +3,19 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Solvers &mdash; MMFem  documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=92fd9be5" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=5929fcd5"></script>
-      <script src="_static/doctools.js?v=9a2dae69"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -102,16 +102,16 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="solvers.picard_iter">
 <span class="sig-prename descclassname"><span class="pre">solvers.</span></span><span class="sig-name descname"><span class="pre">picard_iter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">etiq_dirich</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uD</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">termino_conv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'convectivo'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/solvers.html#picard_iter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#solvers.picard_iter" title="Link to this definition"></a></dt>
-<dd><p>Docstring for picard_iter</p>
+<dd><p>Realiza iteracion de tipo Picard</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mesh</strong> – Description</p></li>
-<li><p><strong>X</strong> – Description</p></li>
-<li><p><strong>etiq_dirich</strong> – Description</p></li>
-<li><p><strong>uD</strong> – Description</p></li>
-<li><p><strong>nu</strong> – Description</p></li>
-<li><p><strong>termino_conv</strong> – Description</p></li>
+<li><p><strong>mesh</strong> (<em>Malla</em>)</p></li>
+<li><p><strong>X</strong> (<em>Espacios de funciones</em>)</p></li>
+<li><p><strong>etiq_dirich</strong> (<em>Etiquetas de bordes con dato dirichlet</em>)</p></li>
+<li><p><strong>uD</strong> (<em>Dato dirichlet</em>)</p></li>
+<li><p><strong>nu</strong> (<em>viscosidad</em>)</p></li>
+<li><p><strong>termino_conv</strong> (<em>Tipo de término convectivo</em>)</p></li>
 </ul>
 </dd>
 </dl>

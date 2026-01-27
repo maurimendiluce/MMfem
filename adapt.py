@@ -4,11 +4,11 @@ from solvers import *
 import matplotlib.pyplot as plt
 import numpy as np
 
-def SolveEstimeMark(mesh,etiqueta_dirichlet,uD,theta=0.7, convex = 0):
+def SolveEstimeMark(mesh,etiquetas_dirichlet,etiqueta_uD,uD,theta=0.7, convex = 0):
     h = specialcf.mesh_size
     n = specialcf.normal(mesh.dim)
-    X = taylor_hood(mesh)
-    gf = picard_iter_adapt(mesh,X,etiqueta_dirichlet,uD)
+    X = taylor_hood(mesh,etiquetas_dirichlet)
+    gf = picard_iter_adapt(mesh,X,etiqueta_uD,uD)
 
     uh = gf.components[0]
     ph = gf.components[1]
@@ -71,16 +71,16 @@ def SolveEstimeMark(mesh,etiqueta_dirichlet,uD,theta=0.7, convex = 0):
 
     return gf,nv,ne,eta,eta_global
 
-def adaptative_method(cant_ref,mesh,etiqueta_dirichlet,uD,theta=0.7):
+def adaptative_method(cant_ref,mesh,etiquetas_dirichlet,etiqueta_uD,uD,theta=0.7):
 
     datos = {"nv":[],"ne":[],"error":[],"eta":[]}
     ref = 0
     while ref<cant_ref:
-        gf,nv,ne,eta,eta_global = SolveEstimeMark(mesh,etiqueta_dirichlet,uD)
+        gf,nv,ne,eta,eta_global = SolveEstimeMark(mesh,etiquetas_dirichlet,etiqueta_uD,uD)
         uh_old = gf.components[0]
         mesh.Refine()
-        X = taylor_hood(mesh)
-        solution = picard_iter_adapt(mesh,X,etiqueta_dirichlet,uD)
+        X = taylor_hood(mesh,etiquetas_dirichlet)
+        solution = picard_iter_adapt(mesh,X,etiqueta_uD,uD)
         uh,ph = solution.components[0],solution.components[1]
         eL4 = sqrt(sqrt(Integrate(InnerProduct(uh-uh_old,uh-uh_old)**2,mesh)))
         datos["nv"].append(nv)

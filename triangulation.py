@@ -60,9 +60,9 @@ def L_mesh(h):
     geo.Append (["line", p1, p2],bc = "side")
     geo.Append (["line", p2, p3],bc = "side")
     geo.Append (["line", p3, p4],bc = "side")
-    geo.Append (["line", p4, p5],bc = "flow")
+    geo.Append (["line", p4, p5],bc = "flow_out")
     geo.Append (["line", p5, p6],bc = "side")
-    geo.Append (["line", p6, p1],bc = "flow_out")
+    geo.Append (["line", p6, p1],bc = "flow_in")
 
     mesh = Mesh(geo.GenerateMesh(maxh=h))
     return mesh
@@ -90,3 +90,11 @@ def etiquetas(mesh):
     bc = mesh.GetBoundaries()
     s = "|".join(bc)
     return s
+
+def dirichlet_sides(mesh,etiqueta_neumann):
+
+    s = etiquetas(mesh)
+    lista = s.split('|')
+    lista.remove(etiqueta_neumann)
+    new = '|'.join(lista)
+    return new

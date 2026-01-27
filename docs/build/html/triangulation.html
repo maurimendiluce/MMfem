@@ -3,19 +3,19 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Triangulation &mdash; MMFem  documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=92fd9be5" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=5929fcd5"></script>
-      <script src="_static/doctools.js?v=9a2dae69"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -45,6 +45,8 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Triangulation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#triangulation.L_mesh"><code class="docutils literal notranslate"><span class="pre">L_mesh()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#triangulation.dirichlet_sides"><code class="docutils literal notranslate"><span class="pre">dirichlet_sides()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#triangulation.etiquetas"><code class="docutils literal notranslate"><span class="pre">etiquetas()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#triangulation.rectangle_mesh"><code class="docutils literal notranslate"><span class="pre">rectangle_mesh()</span></code></a></li>
 </ul>
@@ -81,6 +83,32 @@
              
   <section id="module-triangulation">
 <span id="triangulation"></span><h1>Triangulation<a class="headerlink" href="#module-triangulation" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="triangulation.L_mesh">
+<span class="sig-prename descclassname"><span class="pre">triangulation.</span></span><span class="sig-name descname"><span class="pre">L_mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triangulation.html#L_mesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#triangulation.L_mesh" title="Link to this definition"></a></dt>
+<dd><p>Genera una malla de tipo L: [0,10]x[-0.5,1][0,4]x[-0.5,0]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>malla</strong> (<em>h = tamaño de la</em>)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>mesh</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>objeto de netgen</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">L_mesh</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="triangulation.dirichlet_sides">
+<span class="sig-prename descclassname"><span class="pre">triangulation.</span></span><span class="sig-name descname"><span class="pre">dirichlet_sides</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">etiqueta_neumann</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triangulation.html#dirichlet_sides"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#triangulation.dirichlet_sides" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="triangulation.etiquetas">
 <span class="sig-prename descclassname"><span class="pre">triangulation.</span></span><span class="sig-name descname"><span class="pre">etiquetas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triangulation.html#etiquetas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#triangulation.etiquetas" title="Link to this definition"></a></dt>
