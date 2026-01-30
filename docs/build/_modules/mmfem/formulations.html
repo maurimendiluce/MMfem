@@ -1,0 +1,468 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mmfem.formulations &mdash; MMfem 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            MMfem
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/mesh.html">Mesh module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/spaces.html">Spaces module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/formulations.html">Formulations module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">MMfem</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mmfem.formulations</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mmfem.formulations</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Variational formulations for Stokes and Navier-Stokes problems.</span>
+
+<span class="sd">This module contains functions to assemble and solve variational formulations of incompressible flow problems using finite element methods.</span>
+
+<span class="sd">Functions:</span>
+
+<span class="sd">    stokes_problem: Solve the linear Stokes problem</span>
+<span class="sd">    picard_step: Perform one Picard linearization step</span>
+<span class="sd">    newton_step: Perform one Newton linearization step</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Literal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ngsolve</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Mesh</span><span class="p">,</span> <span class="n">FESpace</span><span class="p">,</span> <span class="n">GridFunction</span><span class="p">,</span> <span class="n">BilinearForm</span><span class="p">,</span> <span class="n">LinearForm</span><span class="p">,</span> <span class="n">CF</span><span class="p">,</span>
+    <span class="n">grad</span><span class="p">,</span> <span class="n">div</span><span class="p">,</span> <span class="n">InnerProduct</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">Grad</span>
+<span class="p">)</span>
+
+
+<span class="n">ConvectionType</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="s2">&quot;divergence&quot;</span><span class="p">,</span> <span class="s2">&quot;skew_symmetric&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="stokes_problem">
+<a class="viewcode-back" href="../../api/formulations.html#mmfem.formulations.stokes_problem">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">stokes_problem</span><span class="p">(</span>
+    <span class="n">mesh</span><span class="p">:</span> <span class="n">Mesh</span><span class="p">,</span>
+    <span class="n">fespace</span><span class="p">:</span> <span class="n">FESpace</span><span class="p">,</span>
+    <span class="n">dirichlet_boundaries</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">velocity_bc</span><span class="p">:</span> <span class="n">CF</span><span class="p">,</span>
+    <span class="n">viscosity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GridFunction</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Solve the steady Stokes problem.</span>
+
+<span class="sd">    The Stokes equations model slow, viscous, incompressible flow:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        -\\nu \\Delta u + \\nabla p = 0 \\quad \\text{in } \\Omega \\\\</span>
+<span class="sd">        \\nabla \\cdot u = 0 \\quad \\text{in } \\Omega \\\\</span>
+<span class="sd">        u = u_D \\quad \\text{on } \\Gamma_D</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mesh : Mesh</span>
+<span class="sd">        Computational domain</span>
+<span class="sd">    fespace : FESpace</span>
+<span class="sd">        Product finite element space [V × Q × N]</span>
+<span class="sd">    dirichlet_boundaries : str</span>
+<span class="sd">        Boundary labels where Dirichlet conditions apply</span>
+<span class="sd">    velocity_bc : CF</span>
+<span class="sd">        Dirichlet boundary data for velocity</span>
+<span class="sd">    viscosity : float, optional</span>
+<span class="sd">        Kinematic viscosity ν (default: 1.0)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    GridFunction</span>
+<span class="sd">        Solution containing velocity, pressure, and Lagrange multiplier.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from ngsolve import CF</span>
+<span class="sd">    &gt;&gt;&gt; from mmfem import rectangle_mesh, taylor_hood, stokes_problem</span>
+<span class="sd">    &gt;&gt;&gt; mesh = rectangle_mesh(0, 1, 0, 1, h=0.05)</span>
+<span class="sd">    &gt;&gt;&gt; X = taylor_hood(mesh, &quot;left|right|floor|top&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; u_bc = CF((1, 0))</span>
+<span class="sd">    &gt;&gt;&gt; solution = stokes_problem(mesh, X, &quot;top&quot;, u_bc, viscosity=0.01)</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The weak formulation finds :math:`(u, p, \\lambda) \\in V \\times Q \\times \\mathbb{R}`</span>
+<span class="sd">    such that</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \\nu (\\nabla u, \\nabla v)</span>
+<span class="sd">        - (p, \\nabla \\cdot v)</span>
+<span class="sd">        - (\\nabla \\cdot u, q)</span>
+<span class="sd">        - \\lambda q</span>
+<span class="sd">        - \\mu p = 0</span>
+
+<span class="sd">    for all test functions :math:`(v, q, \\mu)`.</span>
+
+<span class="sd">    The Lagrange multiplier enforces the constraint</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \\int_\\Omega p \\, dx = 0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Extract test and trial functions</span>
+    <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">lam</span><span class="p">),</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span> <span class="o">=</span> <span class="n">fespace</span><span class="o">.</span><span class="n">TnT</span><span class="p">()</span>
+
+    <span class="c1"># Bilinear form: a(u,p,λ; v,q,μ)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">BilinearForm</span><span class="p">(</span><span class="n">fespace</span><span class="p">)</span>
+    <span class="n">a</span> <span class="o">+=</span> <span class="n">viscosity</span> <span class="o">*</span> <span class="n">InnerProduct</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="n">grad</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="o">*</span> <span class="n">dx</span>  <span class="c1"># Viscous term</span>
+    <span class="n">a</span> <span class="o">+=</span> <span class="o">-</span><span class="n">div</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">*</span> <span class="n">q</span> <span class="o">*</span> <span class="n">dx</span>                                   <span class="c1"># Continuity (∇·u = 0)</span>
+    <span class="n">a</span> <span class="o">+=</span> <span class="o">-</span><span class="n">div</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">p</span> <span class="o">*</span> <span class="n">dx</span>                                   <span class="c1"># Pressure gradient</span>
+    <span class="n">a</span> <span class="o">+=</span> <span class="o">-</span><span class="n">lam</span> <span class="o">*</span> <span class="n">q</span> <span class="o">*</span> <span class="n">dx</span>                                      <span class="c1"># Mean value constraint</span>
+    <span class="n">a</span> <span class="o">+=</span> <span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="n">p</span> <span class="o">*</span> <span class="n">dx</span>                                       <span class="c1"># Mean value constraint</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">Assemble</span><span class="p">()</span>
+
+    <span class="c1"># Linear form: L(v,q,μ) = 0 (no body forces)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">LinearForm</span><span class="p">(</span><span class="n">fespace</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">Assemble</span><span class="p">()</span>
+
+    <span class="c1"># Solution vector</span>
+    <span class="n">solution</span> <span class="o">=</span> <span class="n">GridFunction</span><span class="p">(</span><span class="n">fespace</span><span class="p">)</span>
+
+    <span class="c1"># Apply Dirichlet boundary conditions</span>
+    <span class="n">solution</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span>
+        <span class="n">velocity_bc</span><span class="p">,</span>
+        <span class="n">definedon</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">Boundaries</span><span class="p">(</span><span class="n">dirichlet_boundaries</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Solve the linear system</span>
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">vec</span><span class="o">.</span><span class="n">CreateVector</span><span class="p">()</span>
+    <span class="n">residual</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">vec</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">mat</span> <span class="o">*</span> <span class="n">solution</span><span class="o">.</span><span class="n">vec</span>
+    
+    <span class="n">inverse</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">mat</span><span class="o">.</span><span class="n">Inverse</span><span class="p">(</span><span class="n">freedofs</span><span class="o">=</span><span class="n">fespace</span><span class="o">.</span><span class="n">FreeDofs</span><span class="p">())</span>
+    <span class="n">solution</span><span class="o">.</span><span class="n">vec</span><span class="o">.</span><span class="n">data</span> <span class="o">+=</span> <span class="n">inverse</span> <span class="o">*</span> <span class="n">residual</span>
+
+    <span class="k">return</span> <span class="n">solution</span></div>
+
+
+
+<div class="viewcode-block" id="picard_step">
+<a class="viewcode-back" href="../../api/formulations.html#mmfem.formulations.picard_step">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">picard_step</span><span class="p">(</span>
+    <span class="n">mesh</span><span class="p">:</span> <span class="n">Mesh</span><span class="p">,</span>
+    <span class="n">fespace</span><span class="p">:</span> <span class="n">FESpace</span><span class="p">,</span>
+    <span class="n">velocity_prev</span><span class="p">:</span> <span class="n">GridFunction</span><span class="p">,</span>
+    <span class="n">dirichlet_boundaries</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">velocity_bc</span><span class="p">:</span> <span class="n">CF</span><span class="p">,</span>
+    <span class="n">viscosity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">convection_form</span><span class="p">:</span> <span class="n">ConvectionType</span> <span class="o">=</span> <span class="s2">&quot;standard&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GridFunction</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform one Picard iteration step for the Navier-Stokes equations.</span>
+
+<span class="sd">    The Picard method linearizes the nonlinear convection term by using</span>
+<span class="sd">    the velocity from the previous iteration, solving:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        -\\nu \\Delta u + (u_{old} \\cdot \\nabla)u + \\nabla p = 0</span>
+<span class="sd">        \\nabla \\cdot u = 0</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mesh : Mesh</span>
+<span class="sd">        Computational domain</span>
+<span class="sd">    fespace : FESpace</span>
+<span class="sd">        Product finite element space [V × Q × N]</span>
+<span class="sd">    velocity_prev : GridFunction</span>
+<span class="sd">        Velocity from previous iteration (for linearization)</span>
+<span class="sd">    dirichlet_boundaries : str</span>
+<span class="sd">        Boundary labels where Dirichlet conditions apply</span>
+<span class="sd">    velocity_bc : CF</span>
+<span class="sd">        Dirichlet boundary data for velocity</span>
+<span class="sd">    viscosity : float, optional</span>
+<span class="sd">        Kinematic viscosity ν (default: 1.0)</span>
+<span class="sd">    convection_form : {&#39;standard&#39;, &#39;divergence&#39;, &#39;skew_symmetric&#39;}, optional</span>
+<span class="sd">        Form of the convection term:</span>
+<span class="sd">        - &#39;standard&#39;: (u_old·∇)u</span>
+<span class="sd">        - &#39;divergence&#39;: (u_old·∇)u + 0.5(∇·u_old)u</span>
+<span class="sd">        - &#39;skew_symmetric&#39;: 0.5[(u_old·∇)u - (∇u_old)·u]</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    GridFunction</span>
+<span class="sd">        Updated solution (u, p, λ)</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; # Picard iteration</span>
+<span class="sd">    &gt;&gt;&gt; u_old = stokes_solution.components[0]</span>
+<span class="sd">    &gt;&gt;&gt; for i in range(max_iter):</span>
+<span class="sd">    ...     solution = picard_step(mesh, X, u_old, &quot;top&quot;, u_bc, viscosity=0.01)</span>
+<span class="sd">    ...     u_new = solution.components[0]</span>
+<span class="sd">    ...     error = compute_error(u_new, u_old)</span>
+<span class="sd">    ...     if error &lt; tolerance:</span>
+<span class="sd">    ...         break</span>
+<span class="sd">    ...     u_old = u_new</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The Picard method (also called fixed-point iteration) is:</span>
+<span class="sd">    - Linearly convergent</span>
+<span class="sd">    - Robust for low Reynolds numbers</span>
+<span class="sd">    - Requires good initial guess for high Reynolds numbers</span>
+
+<span class="sd">    Different convection forms can improve stability:</span>
+<span class="sd">    - &#39;divergence&#39;: Better for non-solenoidal velocity approximations</span>
+<span class="sd">    - &#39;skew_symmetric&#39;: Improved energy conservation properties</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Extract test and trial functions</span>
+    <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">lam</span><span class="p">),</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span> <span class="o">=</span> <span class="n">fespace</span><span class="o">.</span><span class="n">TnT</span><span class="p">()</span>
+
+    <span class="c1"># Bilinear form</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">BilinearForm</span><span class="p">(</span><span class="n">fespace</span><span class="p">)</span>
+
+    <span class="c1"># Stokes part (linear)</span>
+    <span class="n">a</span> <span class="o">+=</span> <span class="n">viscosity</span> <span class="o">*</span> <span class="n">InnerProduct</span><span class="p">(</span><span class="n">Grad</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="n">Grad</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="o">*</span> <span class="n">dx</span>
+    <span class="n">a</span> <span class="o">+=</span> <span class="o">-</span><span class="n">div</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">*</span> <span class="n">q</span> <span class="o">*</span> <span class="n">dx</span>
+    <span class="n">a</span> <span class="o">+=</span> <span class="o">-</span><span class="n">div</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">p</span> <span class="o">*</span> <span class="n">dx</span>
+    <span class="n">a</span> <span class="o">+=</span> <span class="o">-</span><span class="n">lam</span> <span class="o">*</span> <span class="n">q</span> <span class="o">*</span> <span class="n">dx</span>
+    <span class="n">a</span> <span class="o">+=</span> <span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="n">p</span> <span class="o">*</span> <span class="n">dx</span>
+
+    <span class="c1"># Convection term (linearized with u_old)</span>
+    <span class="k">if</span> <span class="n">convection_form</span> <span class="o">==</span> <span class="s2">&quot;standard&quot;</span><span class="p">:</span>
+        <span class="n">convection</span> <span class="o">=</span> <span class="n">InnerProduct</span><span class="p">(</span><span class="n">Grad</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">*</span> <span class="n">velocity_prev</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">dx</span>
+    <span class="k">elif</span> <span class="n">convection_form</span> <span class="o">==</span> <span class="s2">&quot;divergence&quot;</span><span class="p">:</span>
+        <span class="n">convection</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">InnerProduct</span><span class="p">(</span><span class="n">Grad</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">*</span> <span class="n">velocity_prev</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">+</span>
+            <span class="mf">0.5</span> <span class="o">*</span> <span class="n">InnerProduct</span><span class="p">(</span><span class="n">div</span><span class="p">(</span><span class="n">velocity_prev</span><span class="p">)</span> <span class="o">*</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">dx</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">convection_form</span> <span class="o">==</span> <span class="s2">&quot;skew_symmetric&quot;</span><span class="p">:</span>
+        <span class="n">convection</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="mf">0.5</span> <span class="o">*</span> <span class="n">InnerProduct</span><span class="p">(</span><span class="n">Grad</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">*</span> <span class="n">velocity_prev</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">-</span>
+            <span class="mf">0.5</span> <span class="o">*</span> <span class="n">InnerProduct</span><span class="p">(</span><span class="n">Grad</span><span class="p">(</span><span class="n">velocity_prev</span><span class="p">)</span> <span class="o">*</span> <span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="o">*</span> <span class="n">dx</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid convection_form &#39;</span><span class="si">{</span><span class="n">convection_form</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Must be &#39;standard&#39;, &#39;divergence&#39;, or &#39;skew_symmetric&#39;.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">a</span> <span class="o">+=</span> <span class="n">convection</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">Assemble</span><span class="p">()</span>
+
+    <span class="c1"># Linear form (no body forces)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">LinearForm</span><span class="p">(</span><span class="n">fespace</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">Assemble</span><span class="p">()</span>
+
+    <span class="c1"># Solution</span>
+    <span class="n">solution</span> <span class="o">=</span> <span class="n">GridFunction</span><span class="p">(</span><span class="n">fespace</span><span class="p">)</span>
+    <span class="n">solution</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span>
+        <span class="n">velocity_bc</span><span class="p">,</span>
+        <span class="n">definedon</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">Boundaries</span><span class="p">(</span><span class="n">dirichlet_boundaries</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Solve</span>
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">vec</span><span class="o">.</span><span class="n">CreateVector</span><span class="p">()</span>
+    <span class="n">residual</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">vec</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">mat</span> <span class="o">*</span> <span class="n">solution</span><span class="o">.</span><span class="n">vec</span>
+    <span class="n">inverse</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">mat</span><span class="o">.</span><span class="n">Inverse</span><span class="p">(</span><span class="n">freedofs</span><span class="o">=</span><span class="n">fespace</span><span class="o">.</span><span class="n">FreeDofs</span><span class="p">())</span>
+    <span class="n">solution</span><span class="o">.</span><span class="n">vec</span><span class="o">.</span><span class="n">data</span> <span class="o">+=</span> <span class="n">inverse</span> <span class="o">*</span> <span class="n">residual</span>
+
+    <span class="k">return</span> <span class="n">solution</span></div>
+
+
+
+<div class="viewcode-block" id="newton_step">
+<a class="viewcode-back" href="../../api/formulations.html#mmfem.formulations.newton_step">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">newton_step</span><span class="p">(</span>
+    <span class="n">mesh</span><span class="p">:</span> <span class="n">Mesh</span><span class="p">,</span>
+    <span class="n">fespace</span><span class="p">:</span> <span class="n">FESpace</span><span class="p">,</span>
+    <span class="n">velocity_prev</span><span class="p">:</span> <span class="n">GridFunction</span><span class="p">,</span>
+    <span class="n">dirichlet_boundaries</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">velocity_bc</span><span class="p">:</span> <span class="n">CF</span><span class="p">,</span>
+    <span class="n">viscosity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GridFunction</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform one Newton iteration step for the Navier-Stokes equations.</span>
+
+<span class="sd">    The Newton method uses the full Jacobian of the nonlinear system,</span>
+<span class="sd">    solving for the update math:`\delta u`:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        J(u_{old})[\\delta u] = -R(u_{old})</span>
+<span class="sd">    </span>
+<span class="sd">    where J is the Jacobian and R is the residual.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mesh : Mesh</span>
+<span class="sd">        Computational domain</span>
+<span class="sd">    fespace : FESpace</span>
+<span class="sd">        Product finite element space [V × Q × N]</span>
+<span class="sd">    velocity_prev : GridFunction</span>
+<span class="sd">        Velocity from previous iteration</span>
+<span class="sd">    dirichlet_boundaries : str</span>
+<span class="sd">        Boundary labels where Dirichlet conditions apply</span>
+<span class="sd">    velocity_bc : CF</span>
+<span class="sd">        Dirichlet boundary data for velocity</span>
+<span class="sd">    viscosity : float, optional</span>
+<span class="sd">        Kinematic viscosity ν (default: 1.0)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    GridFunction</span>
+<span class="sd">        Updated solution (u, p, λ)</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; # Newton iteration</span>
+<span class="sd">    &gt;&gt;&gt; u_old = stokes_solution.components[0]</span>
+<span class="sd">    &gt;&gt;&gt; for i in range(max_iter):</span>
+<span class="sd">    ...     solution = newton_step(mesh, X, u_old, &quot;top&quot;, u_bc, viscosity=0.01)</span>
+<span class="sd">    ...     u_new = solution.components[0]</span>
+<span class="sd">    ...     error = compute_error(u_new, u_old)</span>
+<span class="sd">    ...     if error &lt; tolerance:</span>
+<span class="sd">    ...         break</span>
+<span class="sd">    ...     u_old = u_new</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The Newton method:</span>
+<span class="sd">    - Has quadratic convergence near the solution</span>
+<span class="sd">    - Requires good initial guess (typically from Stokes or Picard)</span>
+<span class="sd">    - Can fail to converge for high Reynolds numbers without continuation</span>
+
+<span class="sd">    The linearization includes both convection terms:</span>
+
+<span class="sd">    ..math::</span>
+
+<span class="sd">        (u_{old} \\cdot \\nabla)u + (u\\cdot \\nabla)u_{old}</span>
+<span class="sd">    </span>
+<span class="sd">    which results from differentiating :math`(u\\cdot \\nabla)u`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Extract test and trial functions</span>
+    <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">lam</span><span class="p">),</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span> <span class="o">=</span> <span class="n">fespace</span><span class="o">.</span><span class="n">TnT</span><span class="p">()</span>
+
+    <span class="c1"># Bilinear form (Jacobian)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">BilinearForm</span><span class="p">(</span><span class="n">fespace</span><span class="p">)</span>
+
+    <span class="c1"># Stokes part</span>
+    <span class="n">a</span> <span class="o">+=</span> <span class="n">viscosity</span> <span class="o">*</span> <span class="n">InnerProduct</span><span class="p">(</span><span class="n">Grad</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="n">Grad</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="o">*</span> <span class="n">dx</span>
+    <span class="n">a</span> <span class="o">+=</span> <span class="o">-</span><span class="n">div</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">*</span> <span class="n">q</span> <span class="o">*</span> <span class="n">dx</span>
+    <span class="n">a</span> <span class="o">+=</span> <span class="o">-</span><span class="n">div</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">p</span> <span class="o">*</span> <span class="n">dx</span>
+    <span class="n">a</span> <span class="o">+=</span> <span class="o">-</span><span class="n">lam</span> <span class="o">*</span> <span class="n">q</span> <span class="o">*</span> <span class="n">dx</span>
+    <span class="n">a</span> <span class="o">+=</span> <span class="o">-</span><span class="n">mu</span> <span class="o">*</span> <span class="n">p</span> <span class="o">*</span> <span class="n">dx</span>
+
+    <span class="c1"># Linearized convection term (derivative of (u·∇)u)</span>
+    <span class="c1"># ∂/∂u [(u·∇)u] · δu = (u_old·∇)δu + (δu·∇)u_old</span>
+    <span class="n">convection</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">InnerProduct</span><span class="p">(</span><span class="n">Grad</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">*</span> <span class="n">velocity_prev</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">+</span>
+        <span class="n">InnerProduct</span><span class="p">(</span><span class="n">Grad</span><span class="p">(</span><span class="n">velocity_prev</span><span class="p">)</span> <span class="o">*</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">-</span>
+        <span class="n">InnerProduct</span><span class="p">(</span><span class="n">Grad</span><span class="p">(</span><span class="n">velocity_prev</span><span class="p">)</span> <span class="o">*</span> <span class="n">velocity_prev</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">dx</span>
+    <span class="p">)</span>
+    
+    <span class="n">a</span> <span class="o">+=</span> <span class="n">convection</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">Assemble</span><span class="p">()</span>
+
+    <span class="c1"># Linear form</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">LinearForm</span><span class="p">(</span><span class="n">fespace</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">Assemble</span><span class="p">()</span>
+
+    <span class="c1"># Solution</span>
+    <span class="n">solution</span> <span class="o">=</span> <span class="n">GridFunction</span><span class="p">(</span><span class="n">fespace</span><span class="p">)</span>
+    <span class="n">solution</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span>
+        <span class="n">velocity_bc</span><span class="p">,</span>
+        <span class="n">definedon</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">Boundaries</span><span class="p">(</span><span class="n">dirichlet_boundaries</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Solve</span>
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">vec</span><span class="o">.</span><span class="n">CreateVector</span><span class="p">()</span>
+    <span class="n">residual</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">vec</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">mat</span> <span class="o">*</span> <span class="n">solution</span><span class="o">.</span><span class="n">vec</span>
+    <span class="n">inverse</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">mat</span><span class="o">.</span><span class="n">Inverse</span><span class="p">(</span><span class="n">freedofs</span><span class="o">=</span><span class="n">fespace</span><span class="o">.</span><span class="n">FreeDofs</span><span class="p">())</span>
+    <span class="n">solution</span><span class="o">.</span><span class="n">vec</span><span class="o">.</span><span class="n">data</span> <span class="o">+=</span> <span class="n">inverse</span> <span class="o">*</span> <span class="n">residual</span>
+
+    <span class="k">return</span> <span class="n">solution</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Mauricio Mendiluce.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

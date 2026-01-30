@@ -1,0 +1,520 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mmfem.solvers &mdash; MMfem 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            MMfem
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/mesh.html">Mesh module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/spaces.html">Spaces module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/formulations.html">Formulations module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/solvers.html">Solvers module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">MMfem</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mmfem.solvers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mmfem.solvers</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Iterative solvers for nonlinear Navier-Stokes equations.</span>
+
+<span class="sd">This module provides high-level iterative solvers that combine the variational</span>
+<span class="sd">formulations with convergence criteria and iteration control.</span>
+
+<span class="sd">Functions:</span>
+<span class="sd">    picard_iteration: Fixed-point iteration for Navier-Stokes</span>
+<span class="sd">    newton_iteration: Newton-Raphson iteration for Navier-Stokes</span>
+<span class="sd">    compute_velocity_error: Compute relative H1 error between velocities</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ngsolve</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Mesh</span><span class="p">,</span> <span class="n">FESpace</span><span class="p">,</span> <span class="n">GridFunction</span><span class="p">,</span> <span class="n">CF</span><span class="p">,</span> <span class="n">Integrate</span><span class="p">,</span> <span class="n">sqrt</span><span class="p">,</span> <span class="n">InnerProduct</span><span class="p">,</span> <span class="n">Grad</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.formulations</span><span class="w"> </span><span class="kn">import</span> <span class="n">stokes_problem</span><span class="p">,</span> <span class="n">picard_step</span><span class="p">,</span> <span class="n">newton_step</span><span class="p">,</span> <span class="n">ConvectionType</span>
+
+
+<div class="viewcode-block" id="compute_velocity_error">
+<a class="viewcode-back" href="../../api/solvers.html#mmfem.solvers.compute_velocity_error">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_velocity_error</span><span class="p">(</span>
+    <span class="n">velocity_new</span><span class="p">:</span> <span class="n">GridFunction</span><span class="p">,</span>
+    <span class="n">velocity_old</span><span class="p">:</span> <span class="n">GridFunction</span><span class="p">,</span>
+    <span class="n">mesh</span><span class="p">:</span> <span class="n">Mesh</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute relative H1 error between two velocity fields.</span>
+
+<span class="sd">    The relative error is defined as:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        error = || \nabla (u_{new} - u_{old}) ||_{L^2} / || \nabla u_{new} ||_{L^2}</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    velocity_new : GridFunction</span>
+<span class="sd">        New velocity field</span>
+<span class="sd">    velocity_old : GridFunction</span>
+<span class="sd">        Previous velocity field</span>
+<span class="sd">    mesh : Mesh</span>
+<span class="sd">        Computational domain</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    float</span>
+<span class="sd">        Relative H1 error</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; error = compute_velocity_error(u_new, u_old, mesh)</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;Relative error: {error:.2e}&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Gradient difference</span>
+    <span class="n">grad_diff</span> <span class="o">=</span> <span class="n">Grad</span><span class="p">(</span><span class="n">velocity_new</span><span class="p">)</span> <span class="o">-</span> <span class="n">Grad</span><span class="p">(</span><span class="n">velocity_old</span><span class="p">)</span>
+    
+    <span class="c1"># L2 norm of gradient difference</span>
+    <span class="n">numerator</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">Integrate</span><span class="p">(</span>
+        <span class="n">InnerProduct</span><span class="p">(</span><span class="n">grad_diff</span><span class="p">,</span> <span class="n">grad_diff</span><span class="p">),</span>
+        <span class="n">mesh</span>
+    <span class="p">))</span>
+    
+    <span class="c1"># L2 norm of new gradient</span>
+    <span class="n">denominator</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">Integrate</span><span class="p">(</span>
+        <span class="n">InnerProduct</span><span class="p">(</span><span class="n">Grad</span><span class="p">(</span><span class="n">velocity_new</span><span class="p">),</span> <span class="n">Grad</span><span class="p">(</span><span class="n">velocity_new</span><span class="p">)),</span>
+        <span class="n">mesh</span>
+    <span class="p">))</span>
+    
+    <span class="c1"># Avoid division by zero</span>
+    <span class="k">if</span> <span class="n">denominator</span> <span class="o">&lt;</span> <span class="mf">1e-15</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span></div>
+
+
+
+<div class="viewcode-block" id="picard_iteration">
+<a class="viewcode-back" href="../../api/solvers.html#mmfem.solvers.picard_iteration">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">picard_iteration</span><span class="p">(</span>
+    <span class="n">mesh</span><span class="p">:</span> <span class="n">Mesh</span><span class="p">,</span>
+    <span class="n">fespace</span><span class="p">:</span> <span class="n">FESpace</span><span class="p">,</span>
+    <span class="n">dirichlet_boundaries</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">velocity_bc</span><span class="p">:</span> <span class="n">CF</span><span class="p">,</span>
+    <span class="n">viscosity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">convection_form</span><span class="p">:</span> <span class="n">ConvectionType</span> <span class="o">=</span> <span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+    <span class="n">tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-10</span><span class="p">,</span>
+    <span class="n">max_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">GridFunction</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Solve Navier-Stokes equations using Picard (fixed-point) iteration.</span>
+
+<span class="sd">    The method iteratively solves linearized problems until convergence:</span>
+<span class="sd">        1. Start with Stokes solution (u^0)</span>
+<span class="sd">        2. For k = 0, 1, 2, ...:</span>
+<span class="sd">           Solve linearized problem with u^k to get u^{k+1}</span>
+<span class="sd">           Check convergence: ||u^{k+1} - u^k|| &lt; tolerance</span>
+<span class="sd">           If converged, return u^{k+1}</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mesh : Mesh</span>
+<span class="sd">        Computational domain</span>
+<span class="sd">    fespace : FESpace</span>
+<span class="sd">        Product finite element space [V × Q × N]</span>
+<span class="sd">    dirichlet_boundaries : str</span>
+<span class="sd">        Boundary labels where Dirichlet conditions apply</span>
+<span class="sd">    velocity_bc : CF</span>
+<span class="sd">        Dirichlet boundary data for velocity</span>
+<span class="sd">    viscosity : float, optional</span>
+<span class="sd">        Kinematic viscosity ν (default: 1.0)</span>
+<span class="sd">    convection_form : {&#39;standard&#39;, &#39;divergence&#39;, &#39;skew_symmetric&#39;}, optional</span>
+<span class="sd">        Form of the convection term (default: &#39;standard&#39;)</span>
+<span class="sd">    tolerance : float, optional</span>
+<span class="sd">        Convergence tolerance for relative H1 error (default: 1e-10)</span>
+<span class="sd">    max_iterations : int, optional</span>
+<span class="sd">        Maximum number of iterations (default: 100)</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Print iteration information (default: True)</span>
+<span class="sd">    callback : callable, optional</span>
+<span class="sd">        Function called after each iteration with signature:</span>
+<span class="sd">        callback(iteration: int, solution: GridFunction, error: float)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    solution : GridFunction</span>
+<span class="sd">        Converged solution containing (velocity, pressure, multiplier)</span>
+<span class="sd">    info : dict</span>
+<span class="sd">        Dictionary with convergence information:</span>
+<span class="sd">        - &#39;converged&#39;: bool, whether the method converged</span>
+<span class="sd">        - &#39;iterations&#39;: int, number of iterations performed</span>
+<span class="sd">        - &#39;errors&#39;: list of float, error at each iteration</span>
+<span class="sd">        - &#39;final_error&#39;: float, final error value</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    RuntimeError</span>
+<span class="sd">        If maximum iterations reached without convergence</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from mmfem import rectangle_mesh, taylor_hood, picard_iteration</span>
+<span class="sd">    &gt;&gt;&gt; from ngsolve import CF</span>
+<span class="sd">    &gt;&gt;&gt; </span>
+<span class="sd">    &gt;&gt;&gt; mesh = rectangle_mesh(0, 1, 0, 1, h=0.05)</span>
+<span class="sd">    &gt;&gt;&gt; X = taylor_hood(mesh, &quot;left|right|bottom|top&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; u_bc = CF((1, 0))</span>
+<span class="sd">    &gt;&gt;&gt; </span>
+<span class="sd">    &gt;&gt;&gt; solution, info = picard_iteration(</span>
+<span class="sd">    ...     mesh, X, &quot;top&quot;, u_bc,</span>
+<span class="sd">    ...     viscosity=0.01,</span>
+<span class="sd">    ...     tolerance=1e-8</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; </span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;Converged in {info[&#39;iterations&#39;]} iterations&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; u, p, _ = solution.components</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Picard iteration is robust but only linearly convergent. It works well for:</span>
+<span class="sd">    - Low to moderate Reynolds numbers</span>
+<span class="sd">    - Problems with good initial guesses</span>
+
+<span class="sd">    For high Reynolds numbers, consider:</span>
+<span class="sd">    - Using continuation methods (gradually decrease viscosity)</span>
+<span class="sd">    - Switching to Newton iteration after Picard converges</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Picard Iteration for Navier-Stokes Equations&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Viscosity (ν): </span><span class="si">{</span><span class="n">viscosity</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Convection form: </span><span class="si">{</span><span class="n">convection_form</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tolerance: </span><span class="si">{</span><span class="n">tolerance</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Max iterations: </span><span class="si">{</span><span class="n">max_iterations</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+
+    <span class="c1"># Step 1: Solve Stokes problem for initial guess</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Solving initial Stokes problem...&quot;</span><span class="p">)</span>
+    
+    <span class="n">stokes_solution</span> <span class="o">=</span> <span class="n">stokes_problem</span><span class="p">(</span>
+        <span class="n">mesh</span><span class="p">,</span> <span class="n">fespace</span><span class="p">,</span> <span class="n">dirichlet_boundaries</span><span class="p">,</span> <span class="n">velocity_bc</span><span class="p">,</span> <span class="n">viscosity</span>
+    <span class="p">)</span>
+    <span class="n">velocity_old</span> <span class="o">=</span> <span class="n">stokes_solution</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Initialize tracking</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Step 2: Picard iteration</span>
+    <span class="k">while</span> <span class="n">iteration</span> <span class="o">&lt;</span> <span class="n">max_iterations</span><span class="p">:</span>
+        <span class="c1"># Solve linearized problem</span>
+        <span class="n">solution</span> <span class="o">=</span> <span class="n">picard_step</span><span class="p">(</span>
+            <span class="n">mesh</span><span class="p">,</span> <span class="n">fespace</span><span class="p">,</span> <span class="n">velocity_old</span><span class="p">,</span>
+            <span class="n">dirichlet_boundaries</span><span class="p">,</span> <span class="n">velocity_bc</span><span class="p">,</span>
+            <span class="n">viscosity</span><span class="p">,</span> <span class="n">convection_form</span>
+        <span class="p">)</span>
+        
+        <span class="n">velocity_new</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Compute error</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">compute_velocity_error</span><span class="p">(</span><span class="n">velocity_new</span><span class="p">,</span> <span class="n">velocity_old</span><span class="p">,</span> <span class="n">mesh</span><span class="p">)</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Iteration </span><span class="si">{</span><span class="n">iteration</span><span class="si">:</span><span class="s2">3d</span><span class="si">}</span><span class="s2"> | Error: </span><span class="si">{</span><span class="n">error</span><span class="si">:</span><span class="s2">.6e</span><span class="si">}</span><span class="s2"> | Tolerance: </span><span class="si">{</span><span class="n">tolerance</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Call callback if provided</span>
+        <span class="k">if</span> <span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">callback</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+
+        <span class="c1"># Check convergence</span>
+        <span class="k">if</span> <span class="n">error</span> <span class="o">&lt;</span> <span class="n">tolerance</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;converged&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;iterations&#39;</span><span class="p">:</span> <span class="n">iteration</span><span class="p">,</span>
+                <span class="s1">&#39;errors&#39;</span><span class="p">:</span> <span class="n">errors</span><span class="p">,</span>
+                <span class="s1">&#39;final_error&#39;</span><span class="p">:</span> <span class="n">error</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Converged in </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2"> iterations&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">solution</span><span class="p">,</span> <span class="n">info</span>
+
+        <span class="c1"># Update for next iteration</span>
+        <span class="n">velocity_old</span> <span class="o">=</span> <span class="n">velocity_new</span>
+        <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Max iterations reached</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;converged&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;iterations&#39;</span><span class="p">:</span> <span class="n">max_iterations</span><span class="p">,</span>
+        <span class="s1">&#39;errors&#39;</span><span class="p">:</span> <span class="n">errors</span><span class="p">,</span>
+        <span class="s1">&#39;final_error&#39;</span><span class="p">:</span> <span class="n">errors</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">errors</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+    <span class="p">}</span>
+    
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✗ Did not converge in </span><span class="si">{</span><span class="n">max_iterations</span><span class="si">}</span><span class="s2"> iterations&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final error: </span><span class="si">{</span><span class="n">errors</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.6e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Picard iteration did not converge in </span><span class="si">{</span><span class="n">max_iterations</span><span class="si">}</span><span class="s2"> iterations. &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Final error: </span><span class="si">{</span><span class="n">errors</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.6e</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="newton_iteration">
+<a class="viewcode-back" href="../../api/solvers.html#mmfem.solvers.newton_iteration">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">newton_iteration</span><span class="p">(</span>
+    <span class="n">mesh</span><span class="p">:</span> <span class="n">Mesh</span><span class="p">,</span>
+    <span class="n">fespace</span><span class="p">:</span> <span class="n">FESpace</span><span class="p">,</span>
+    <span class="n">dirichlet_boundaries</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">velocity_bc</span><span class="p">:</span> <span class="n">CF</span><span class="p">,</span>
+    <span class="n">viscosity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-10</span><span class="p">,</span>
+    <span class="n">max_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">use_stokes_initial</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">GridFunction</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Solve Navier-Stokes equations using Newton-Raphson iteration.</span>
+
+<span class="sd">    The Newton method has quadratic convergence but requires a good initial guess.</span>
+<span class="sd">    It solves the nonlinear system by iteratively solving linearized problems</span>
+<span class="sd">    using the full Jacobian.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mesh : Mesh</span>
+<span class="sd">        Computational domain</span>
+<span class="sd">    fespace : FESpace</span>
+<span class="sd">        Product finite element space [V × Q × N]</span>
+<span class="sd">    dirichlet_boundaries : str</span>
+<span class="sd">        Boundary labels where Dirichlet conditions apply</span>
+<span class="sd">    velocity_bc : CF</span>
+<span class="sd">        Dirichlet boundary data for velocity</span>
+<span class="sd">    viscosity : float, optional</span>
+<span class="sd">        Kinematic viscosity ν (default: 1.0)</span>
+<span class="sd">    tolerance : float, optional</span>
+<span class="sd">        Convergence tolerance for relative H1 error (default: 1e-10)</span>
+<span class="sd">    max_iterations : int, optional</span>
+<span class="sd">        Maximum number of iterations (default: 50)</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Print iteration information (default: True)</span>
+<span class="sd">    use_stokes_initial : bool, optional</span>
+<span class="sd">        Use Stokes solution as initial guess (default: True).</span>
+<span class="sd">        If False, uses zero initial guess.</span>
+<span class="sd">    callback : callable, optional</span>
+<span class="sd">        Function called after each iteration</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    solution : GridFunction</span>
+<span class="sd">        Converged solution containing (velocity, pressure, multiplier)</span>
+<span class="sd">    info : dict</span>
+<span class="sd">        Dictionary with convergence information</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; solution, info = newton_iteration(</span>
+<span class="sd">    ...     mesh, X, &quot;top&quot;, u_bc,</span>
+<span class="sd">    ...     viscosity=0.01,</span>
+<span class="sd">    ...     tolerance=1e-10</span>
+<span class="sd">    ... )</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Newton iteration:</span>
+<span class="sd">    - Has quadratic convergence near the solution</span>
+<span class="sd">    - May diverge without good initial guess</span>
+<span class="sd">    - Typically requires fewer iterations than Picard</span>
+
+<span class="sd">    Best practices:</span>
+<span class="sd">    1. Use Stokes solution as initial guess (default)</span>
+<span class="sd">    2. For high Reynolds numbers, first converge with Picard</span>
+<span class="sd">    3. Consider continuation methods for difficult problems</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Newton Iteration for Navier-Stokes Equations&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Viscosity (ν): </span><span class="si">{</span><span class="n">viscosity</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tolerance: </span><span class="si">{</span><span class="n">tolerance</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Max iterations: </span><span class="si">{</span><span class="n">max_iterations</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+
+    <span class="c1"># Initial guess</span>
+    <span class="k">if</span> <span class="n">use_stokes_initial</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Solving initial Stokes problem...&quot;</span><span class="p">)</span>
+        <span class="n">initial_solution</span> <span class="o">=</span> <span class="n">stokes_problem</span><span class="p">(</span>
+            <span class="n">mesh</span><span class="p">,</span> <span class="n">fespace</span><span class="p">,</span> <span class="n">dirichlet_boundaries</span><span class="p">,</span> <span class="n">velocity_bc</span><span class="p">,</span> <span class="n">viscosity</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">initial_solution</span> <span class="o">=</span> <span class="n">GridFunction</span><span class="p">(</span><span class="n">fespace</span><span class="p">)</span>
+        <span class="n">initial_solution</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span>
+            <span class="n">velocity_bc</span><span class="p">,</span>
+            <span class="n">definedon</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">Boundaries</span><span class="p">(</span><span class="n">dirichlet_boundaries</span><span class="p">)</span>
+        <span class="p">)</span>
+    
+    <span class="n">velocity_old</span> <span class="o">=</span> <span class="n">initial_solution</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Newton iteration</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">while</span> <span class="n">iteration</span> <span class="o">&lt;</span> <span class="n">max_iterations</span><span class="p">:</span>
+        <span class="c1"># Newton step</span>
+        <span class="n">solution</span> <span class="o">=</span> <span class="n">newton_step</span><span class="p">(</span>
+            <span class="n">mesh</span><span class="p">,</span> <span class="n">fespace</span><span class="p">,</span> <span class="n">velocity_old</span><span class="p">,</span>
+            <span class="n">dirichlet_boundaries</span><span class="p">,</span> <span class="n">velocity_bc</span><span class="p">,</span>
+            <span class="n">viscosity</span>
+        <span class="p">)</span>
+        
+        <span class="n">velocity_new</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Compute error</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">compute_velocity_error</span><span class="p">(</span><span class="n">velocity_new</span><span class="p">,</span> <span class="n">velocity_old</span><span class="p">,</span> <span class="n">mesh</span><span class="p">)</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Iteration </span><span class="si">{</span><span class="n">iteration</span><span class="si">:</span><span class="s2">3d</span><span class="si">}</span><span class="s2"> | Error: </span><span class="si">{</span><span class="n">error</span><span class="si">:</span><span class="s2">.6e</span><span class="si">}</span><span class="s2"> | Tolerance: </span><span class="si">{</span><span class="n">tolerance</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Callback</span>
+        <span class="k">if</span> <span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">callback</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+
+        <span class="c1"># Check convergence</span>
+        <span class="k">if</span> <span class="n">error</span> <span class="o">&lt;</span> <span class="n">tolerance</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;converged&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;iterations&#39;</span><span class="p">:</span> <span class="n">iteration</span><span class="p">,</span>
+                <span class="s1">&#39;errors&#39;</span><span class="p">:</span> <span class="n">errors</span><span class="p">,</span>
+                <span class="s1">&#39;final_error&#39;</span><span class="p">:</span> <span class="n">error</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Converged in </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2"> iterations&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">solution</span><span class="p">,</span> <span class="n">info</span>
+
+        <span class="c1"># Update</span>
+        <span class="n">velocity_old</span> <span class="o">=</span> <span class="n">velocity_new</span>
+        <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Max iterations reached</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;converged&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;iterations&#39;</span><span class="p">:</span> <span class="n">max_iterations</span><span class="p">,</span>
+        <span class="s1">&#39;errors&#39;</span><span class="p">:</span> <span class="n">errors</span><span class="p">,</span>
+        <span class="s1">&#39;final_error&#39;</span><span class="p">:</span> <span class="n">errors</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">errors</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+    <span class="p">}</span>
+    
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✗ Did not converge in </span><span class="si">{</span><span class="n">max_iterations</span><span class="si">}</span><span class="s2"> iterations&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final error: </span><span class="si">{</span><span class="n">errors</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.6e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Newton iteration did not converge in </span><span class="si">{</span><span class="n">max_iterations</span><span class="si">}</span><span class="s2"> iterations. &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Final error: </span><span class="si">{</span><span class="n">errors</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.6e</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Mauricio Mendiluce.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

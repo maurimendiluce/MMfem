@@ -1,0 +1,6 @@
+mmfem package
+=============
+
+.. automodule:: mmfem
+   :members:
+   :undoc-members:

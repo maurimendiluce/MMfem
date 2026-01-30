@@ -1,0 +1,233 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mmfem package &mdash; MMfem 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MMfem
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mesh.html">Mesh module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MMfem</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">mmfem package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/mmfem.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-mmfem">
+<span id="mmfem-package"></span><h1>mmfem package<a class="headerlink" href="#module-mmfem" title="Link to this heading"></a></h1>
+<p>MMfem: A Python library for solving Navier-Stokes problems using the Finite Element Method.</p>
+<p>This package provides tools for:
+- Mesh generation and domain discretization
+- Finite element space construction (Taylor-Hood, MINI elements)
+- Numerical solvers (Picard, Newton iterations)
+- Adaptive mesh refinement
+- Time-dependent problems</p>
+<dl class="simple">
+<dt>Main modules:</dt><dd><ul class="simple">
+<li><p>mesh: Mesh generation and boundary handling</p></li>
+<li><p>spaces: Finite element spaces (Taylor-Hood, MINI)</p></li>
+<li><p>formulations: Variational formulations (Stokes, Navier-Stokes)</p></li>
+<li><p>solvers: Iterative solvers (Picard, Newton)</p></li>
+<li><p>adaptive: Adaptive mesh refinement strategies</p></li>
+<li><p>time_dependent: Time-stepping schemes for evolutionary problems</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">mmfem</span><span class="w"> </span><span class="kn">import</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">spaces</span><span class="p">,</span> <span class="n">solvers</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">domain</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">rectangle_mesh</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fem_space</span> <span class="o">=</span> <span class="n">spaces</span><span class="o">.</span><span class="n">taylor_hood</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="s2">&quot;top&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">solution</span> <span class="o">=</span> <span class="n">solvers</span><span class="o">.</span><span class="n">picard_iteration</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">fem_space</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>Authors:</dt><dd><p>Mauricio Mendiluce</p>
+</dd>
+<dt>Version:</dt><dd><p>0.1.0</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="mmfem.L_mesh">
+<span class="sig-prename descclassname"><span class="pre">mmfem.</span></span><span class="sig-name descname"><span class="pre">L_mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mmfem.L_mesh" title="Link to this definition"></a></dt>
+<dd><p>Generate a triangular mesh for an L-shaped (backward-facing step) domain.</p>
+<dl class="simple">
+<dt>The domain is:</dt><dd><p>[0,10] × [-0.5,1] [0,4] × [-0.5,0]</p>
+</dd>
+</dl>
+<p>This geometry is commonly used as a CFD benchmark and exhibits
+a re-entrant corner singularity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>h</strong> (<em>float</em>) – Maximum mesh size.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>NGSolve mesh with labeled boundaries:
+- “side”      : wall boundaries
+- “flow_in”   : inlet (x = 0)
+- “flow_out”  : outlet (x = 10)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mesh</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mmfem.get_boundary_labels">
+<span class="sig-prename descclassname"><span class="pre">mmfem.</span></span><span class="sig-name descname"><span class="pre">get_boundary_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mmfem/mesh.html#get_boundary_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mmfem.get_boundary_labels" title="Link to this definition"></a></dt>
+<dd><p>Return all boundary labels of a mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mesh</strong> (<em>Mesh</em>) – NGSolve mesh object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Boundary labels.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mmfem.get_dirichlet_boundaries">
+<span class="sig-prename descclassname"><span class="pre">mmfem.</span></span><span class="sig-name descname"><span class="pre">get_dirichlet_boundaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neumann_labels</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mmfem/mesh.html#get_dirichlet_boundaries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mmfem.get_dirichlet_boundaries" title="Link to this definition"></a></dt>
+<dd><p>Compute Dirichlet boundary labels by excluding Neumann boundaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<em>Mesh</em>) – NGSolve mesh object.</p></li>
+<li><p><strong>neumann_labels</strong> (<em>str</em><em> or </em><em>list</em><em> of </em><em>str</em>) – Boundary labels where Neumann conditions apply.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pipe-separated Dirichlet boundary labels.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If any Neumann label is not found in the mesh.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mmfem.rectangle_mesh">
+<span class="sig-prename descclassname"><span class="pre">mmfem.</span></span><span class="sig-name descname"><span class="pre">rectangle_mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mmfem/mesh.html#rectangle_mesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mmfem.rectangle_mesh" title="Link to this definition"></a></dt>
+<dd><p>Generate a triangular mesh for a rectangular domain
+[x_min, x_max] × [y_min, y_max].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_min</strong> (<em>float</em>) – Left and right x-coordinates.</p></li>
+<li><p><strong>x_max</strong> (<em>float</em>) – Left and right x-coordinates.</p></li>
+<li><p><strong>y_min</strong> (<em>float</em>) – Bottom and top y-coordinates.</p></li>
+<li><p><strong>y_max</strong> (<em>float</em>) – Bottom and top y-coordinates.</p></li>
+<li><p><strong>h</strong> (<em>float</em>) – Maximum mesh size (element diameter).</p></li>
+<li><p><strong>boundary_names</strong> (<em>dict</em><em>, </em><em>optional</em>) – Mapping of boundary positions to labels.
+Allowed keys: {“bottom”, “right”, “top”, “left”}.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>NGSolve mesh with labeled boundaries.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mesh</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">rectangle_mesh</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span><span class="o">.</span><span class="n">GetBoundaries</span><span class="p">()</span>
+<span class="go">(&#39;bottom&#39;, &#39;right&#39;, &#39;top&#39;, &#39;left&#39;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Mauricio Mendiluce.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

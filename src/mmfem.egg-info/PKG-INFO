@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: MMfem
+Version: 0.1.0
+Summary: Finite Element solver for Navier–Stokes using NGSolve
+Author: Mauricio Mendiluce
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: numpy
+
+# MMfem: Finite Element Method for Navier-Stokes Equations
+
+[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![NGSolve](https://img.shields.io/badge/NGSolve-required-orange)](https://ngsolve.org/)
+
+A Python library for solving incompressible Navier-Stokes problems using the Finite Element Method (FEM). Built on top of NGSolve, MMfem provides an intuitive API for setting up and solving fluid dynamics problems with various numerical methods.

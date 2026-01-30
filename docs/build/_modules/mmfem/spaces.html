@@ -1,0 +1,300 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mmfem.spaces &mdash; MMfem 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            MMfem
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/mesh.html">Mesh module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/spaces.html">Spaces module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">MMfem</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mmfem.spaces</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mmfem.spaces</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Finite element spaces for incompressible flow problems.</span>
+
+<span class="sd">This module provides functions to construct finite element spaces suitable</span>
+<span class="sd">for solving the Navier-Stokes equations, including inf-sup stable pairs.</span>
+
+<span class="sd">Functions:</span>
+<span class="sd">    taylor_hood: Taylor-Hood elements (P2-P1 velocity-pressure pair)</span>
+<span class="sd">    mini_elements: MINI elements (P1-bubble enriched velocity, P1 pressure)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ngsolve</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mesh</span><span class="p">,</span> <span class="n">FESpace</span><span class="p">,</span> <span class="n">VectorH1</span><span class="p">,</span> <span class="n">H1</span><span class="p">,</span> <span class="n">NumberSpace</span><span class="p">,</span> <span class="n">TRIG</span>
+
+
+<div class="viewcode-block" id="taylor_hood">
+<a class="viewcode-back" href="../../api/spaces.html#mmfem.spaces.taylor_hood">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">taylor_hood</span><span class="p">(</span>
+    <span class="n">mesh</span><span class="p">:</span> <span class="n">Mesh</span><span class="p">,</span>
+    <span class="n">dirichlet_boundaries</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">velocity_order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FESpace</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Construct a Taylor-Hood finite element space for Navier-Stokes problems.</span>
+
+<span class="sd">    The Taylor-Hood element is a popular inf-sup stable pair consisting of:</span>
+<span class="sd">    - P_k vector-valued finite elements for velocity (default k=2)</span>
+<span class="sd">    - P_{k-1} scalar finite elements for pressure (k-1 typically = 1)</span>
+<span class="sd">    - NumberSpace for pressure mean value constraint</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mesh : Mesh</span>
+<span class="sd">        Computational domain mesh</span>
+<span class="sd">    dirichlet_boundaries : str</span>
+<span class="sd">        Pipe-separated string of boundary labels where Dirichlet conditions</span>
+<span class="sd">        are applied (e.g., &quot;left|right|top&quot;)</span>
+<span class="sd">    velocity_order : int, optional</span>
+<span class="sd">        Polynomial order for velocity space (default: 2).</span>
+<span class="sd">        Pressure order will be velocity_order - 1</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    FESpace</span>
+<span class="sd">        Product finite element space [V × Q × N] where:</span>
+<span class="sd">        - V: Vector H1 space for velocity (order=velocity_order)</span>
+<span class="sd">        - Q: Scalar H1 space for pressure (order=velocity_order-1)</span>
+<span class="sd">        - N: NumberSpace for mean value constraint</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from mmfem.mesh import rectangle_mesh</span>
+<span class="sd">    &gt;&gt;&gt; from mmfem.spaces import taylor_hood</span>
+<span class="sd">    &gt;&gt;&gt; mesh = rectangle_mesh(0, 1, 0, 1, h=0.1)</span>
+<span class="sd">    &gt;&gt;&gt; X = taylor_hood(mesh, &quot;left|right|top|floor&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;Total DOFs: {X.ndof}&quot;)</span>
+
+<span class="sd">    &gt;&gt;&gt; # Higher order Taylor-Hood (P3-P2)</span>
+<span class="sd">    &gt;&gt;&gt; X_high = taylor_hood(mesh, &quot;left|right|top|floor&quot;, velocity_order=3)</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The Taylor-Hood P2-P1 element is inf-sup stable and widely used for</span>
+<span class="sd">    incompressible flow simulations. The NumberSpace constraint ensures</span>
+<span class="sd">    uniqueness of the pressure solution up to a constant.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Taylor, C., &amp; Hood, P. (1973). *A numerical solution of the Navier-Stokes equations using the finite element technique.*</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Velocity space (vector-valued H1)</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">VectorH1</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">velocity_order</span><span class="p">,</span> <span class="n">dirichlet</span><span class="o">=</span><span class="n">dirichlet_boundaries</span><span class="p">)</span>
+    
+    <span class="c1"># Pressure space (scalar H1, one order lower)</span>
+    <span class="n">pressure_order</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">velocity_order</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">Q</span> <span class="o">=</span> <span class="n">H1</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">pressure_order</span><span class="p">)</span>
+    
+    <span class="c1"># NumberSpace for pressure mean value constraint</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">NumberSpace</span><span class="p">(</span><span class="n">mesh</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">FESpace</span><span class="p">([</span><span class="n">V</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">N</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="mini_elements">
+<a class="viewcode-back" href="../../api/spaces.html#mmfem.spaces.mini_elements">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mini_elements</span><span class="p">(</span>
+    <span class="n">mesh</span><span class="p">:</span> <span class="n">Mesh</span><span class="p">,</span>
+    <span class="n">dirichlet_boundaries</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FESpace</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Construct MINI finite element space for Navier-Stokes problems.</span>
+
+<span class="sd">    The MINI element consists of:</span>
+<span class="sd">    - P1 vector-valued finite elements enriched with cubic bubbles for velocity</span>
+<span class="sd">    - P1 scalar finite elements for pressure</span>
+<span class="sd">    - NumberSpace for pressure mean value constraint</span>
+
+<span class="sd">    The bubble enrichment is achieved by setting order=3 on triangular elements,</span>
+<span class="sd">    which adds internal degrees of freedom that vanish on element boundaries.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mesh : Mesh</span>
+<span class="sd">        Computational domain mesh</span>
+<span class="sd">    dirichlet_boundaries : str</span>
+<span class="sd">        Pipe-separated string of boundary labels where Dirichlet conditions</span>
+<span class="sd">        are applied</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    FESpace</span>
+<span class="sd">        Product finite element space [V × Q × N] where:</span>
+<span class="sd">        - V: Vector H1 space with P1 + bubble enrichment</span>
+<span class="sd">        - Q: Scalar H1 space for pressure (order=1)</span>
+<span class="sd">        - N: NumberSpace for mean value constraint</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from mmfem.mesh import rectangle_mesh</span>
+<span class="sd">    &gt;&gt;&gt; from mmfem.spaces import mini_elements</span>
+<span class="sd">    &gt;&gt;&gt; mesh = rectangle_mesh(0, 1, 0, 1, h=0.1)</span>
+<span class="sd">    &gt;&gt;&gt; X = mini_elements(mesh, &quot;left|right|top|floor&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;Total DOFs: {X.ndof}&quot;)</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    MINI elements provide a simple, low-order inf-sup stable discretization.</span>
+<span class="sd">    The bubble functions improve the approximation quality while maintaining</span>
+<span class="sd">    local support. They are particularly useful for:</span>
+<span class="sd">    - Problems requiring local mass conservation</span>
+<span class="sd">    - Situations where Taylor-Hood elements are too expensive</span>
+
+<span class="sd">    The bubble enrichment increases the number of degrees of freedom per</span>
+<span class="sd">    element but maintains sparsity of the system matrix.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Arnold, D., Brezzi, F., &amp; Fortin, M. (1984). *A stable finite element for the Stokes equations.*</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Velocity space (initially P1)</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">VectorH1</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dirichlet</span><span class="o">=</span><span class="n">dirichlet_boundaries</span><span class="p">)</span>
+    
+    <span class="c1"># Enrich with cubic bubbles on triangular elements</span>
+    <span class="n">V</span><span class="o">.</span><span class="n">SetOrder</span><span class="p">(</span><span class="n">TRIG</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">V</span><span class="o">.</span><span class="n">Update</span><span class="p">()</span>
+    
+    <span class="c1"># Pressure space (P1)</span>
+    <span class="n">Q</span> <span class="o">=</span> <span class="n">H1</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    
+    <span class="c1"># NumberSpace for pressure mean value constraint</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">NumberSpace</span><span class="p">(</span><span class="n">mesh</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">FESpace</span><span class="p">([</span><span class="n">V</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">N</span><span class="p">])</span></div>
+
+
+
+<span class="c1"># Optional: Function to get space information</span>
+<div class="viewcode-block" id="get_space_info">
+<a class="viewcode-back" href="../../api/spaces.html#mmfem.spaces.get_space_info">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_space_info</span><span class="p">(</span><span class="n">fespace</span><span class="p">:</span> <span class="n">FESpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract information about a finite element space.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fespace : FESpace</span>
+<span class="sd">        Finite element space (typically a product space)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Dictionary containing:</span>
+<span class="sd">        - &#39;total_dofs&#39;: Total degrees of freedom</span>
+<span class="sd">        - &#39;velocity_dofs&#39;: Velocity DOFs (if applicable)</span>
+<span class="sd">        - &#39;pressure_dofs&#39;: Pressure DOFs (if applicable)</span>
+<span class="sd">        - &#39;constraint_dofs&#39;: Constraint DOFs (if applicable)</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; X = taylor_hood(mesh, &quot;left|right|top|floor&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; info = get_space_info(X)</span>
+<span class="sd">    &gt;&gt;&gt; print(info)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;total_dofs&#39;</span><span class="p">:</span> <span class="n">fespace</span><span class="o">.</span><span class="n">ndof</span><span class="p">}</span>
+    
+    <span class="c1"># Try to extract component information</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">components</span> <span class="o">=</span> <span class="n">fespace</span><span class="o">.</span><span class="n">components</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">components</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">info</span><span class="p">[</span><span class="s1">&#39;velocity_dofs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ndof</span>
+            <span class="n">info</span><span class="p">[</span><span class="s1">&#39;pressure_dofs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">components</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">ndof</span>
+            <span class="n">info</span><span class="p">[</span><span class="s1">&#39;constraint_dofs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">components</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">ndof</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    
+    <span class="k">return</span> <span class="n">info</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Mauricio Mendiluce.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

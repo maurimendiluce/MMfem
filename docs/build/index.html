@@ -1,0 +1,218 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MMfem documentation &mdash; MMfem 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Mesh module" href="api/mesh.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            MMfem
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/mesh.html">Mesh module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/spaces.html">Spaces module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/formulations.html">Formulations module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/solvers.html">Solvers module</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/lid_driven_cavity.html">Lid-driven cavity problem</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">MMfem</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">MMfem documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mmfem-documentation">
+<h1>MMfem documentation<a class="headerlink" href="#mmfem-documentation" title="Link to this heading"></a></h1>
+<p>Welcome to <strong>MMfem</strong>, a Python package for modeling and solving the Navier-Stokes problem using finite elements.
+This package is focused on academic research and reproducible numerical experimentation.</p>
+<p>MMfem is based on <a class="reference external" href="https://ngsolve.org">NGSolve</a>, prioritizing clarity, extensibility, and mathematical transparency over black-box solvers.</p>
+<p>The package is intended for:</p>
+<ul class="simple">
+<li><p>research in numerical analysis and scientific computing</p></li>
+<li><p>prototyping finite element methods</p></li>
+<li><p>teaching and academic experimentation</p></li>
+</ul>
+<hr class="docutils" />
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>MMfem is developed as a standard Python package using the <code class="docutils literal notranslate"><span class="pre">src</span></code> layout.
+The recommended installation method is an <strong>editable install</strong>.</p>
+<p><strong>Requirements</strong></p>
+<ul class="simple">
+<li><p>Python ≥ 3.9</p></li>
+<li><p>NGSolve (installed via conda)</p></li>
+<li><p>NumPy</p></li>
+</ul>
+<p><strong>Using conda (recommended)</strong></p>
+<p>First, activate your conda environment where NGSolve is installed:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>base
+</pre></div>
+</div>
+<p>(or any environment where <code class="docutils literal notranslate"><span class="pre">ngsolve</span></code> is available)</p>
+<p>Then, from the root of the repository:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+<p>This allows you to modify the source code without reinstalling the package.</p>
+<p><strong>Verify installation</strong></p>
+<p>You can verify the installation by running:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import mmfem; print(mmfem.__version__)&quot;</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="getting-started">
+<h2>Getting started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h2>
+<p>A simple example to generate a rectangular mesh:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">mmfem.mesh</span><span class="w"> </span><span class="kn">import</span> <span class="n">rectangle_mesh</span>
+
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">rectangle_mesh</span><span class="p">(</span>
+    <span class="n">x_min</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">x_max</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">y_min</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">y_max</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">h</span><span class="o">=</span><span class="mf">0.1</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h2>
+<p>The complete API documentation is available below.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/mesh.html">Mesh module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/mesh.html#main-features">Main features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/mesh.html#mmfem.mesh.L_mesh"><code class="docutils literal notranslate"><span class="pre">L_mesh()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/mesh.html#mmfem.mesh.boundary_string"><code class="docutils literal notranslate"><span class="pre">boundary_string()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/mesh.html#mmfem.mesh.get_boundary_labels"><code class="docutils literal notranslate"><span class="pre">get_boundary_labels()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/mesh.html#mmfem.mesh.get_dirichlet_boundaries"><code class="docutils literal notranslate"><span class="pre">get_dirichlet_boundaries()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/mesh.html#mmfem.mesh.l_shaped_mesh"><code class="docutils literal notranslate"><span class="pre">l_shaped_mesh()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/mesh.html#mmfem.mesh.rectangle_mesh"><code class="docutils literal notranslate"><span class="pre">rectangle_mesh()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/spaces.html">Spaces module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/spaces.html#mmfem.spaces.get_space_info"><code class="docutils literal notranslate"><span class="pre">get_space_info()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/spaces.html#mmfem.spaces.mini_elements"><code class="docutils literal notranslate"><span class="pre">mini_elements()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/spaces.html#mmfem.spaces.taylor_hood"><code class="docutils literal notranslate"><span class="pre">taylor_hood()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/formulations.html">Formulations module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/formulations.html#mmfem.formulations.newton_step"><code class="docutils literal notranslate"><span class="pre">newton_step()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/formulations.html#mmfem.formulations.picard_step"><code class="docutils literal notranslate"><span class="pre">picard_step()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/formulations.html#mmfem.formulations.stokes_problem"><code class="docutils literal notranslate"><span class="pre">stokes_problem()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/solvers.html">Solvers module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/solvers.html#mmfem.solvers.compute_velocity_error"><code class="docutils literal notranslate"><span class="pre">compute_velocity_error()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/solvers.html#mmfem.solvers.newton_iteration"><code class="docutils literal notranslate"><span class="pre">newton_iteration()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/solvers.html#mmfem.solvers.picard_iteration"><code class="docutils literal notranslate"><span class="pre">picard_iteration()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/lid_driven_cavity.html">Lid-driven cavity problem</a></li>
+</ul>
+</div>
+</section>
+<hr class="docutils" />
+<section id="license-and-authorship">
+<h2>License and authorship<a class="headerlink" href="#license-and-authorship" title="Link to this heading"></a></h2>
+<p>MMfem is developed by <strong>Mauricio Mendiluce</strong> and distributed for academic and
+research purposes.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="api/mesh.html" class="btn btn-neutral float-right" title="Mesh module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Mauricio Mendiluce.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
