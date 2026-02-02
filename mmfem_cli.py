@@ -197,6 +197,137 @@ def setup_problem():
 
 
 ####
+def solve_problem(config):
+    """Solve the problem with given configuration."""
+    print("\n" + "="*80)
+    print("RESOLVIENDO...")
+    print("="*80)
+    
+    try:
+        from mmfem import (
+            rectangle_mesh, L_mesh,
+            taylor_hood,
+            picard_iteration, newton_iteration,
+            #adaptive_solve,
+            #generate_convergence_plot
+        )
+        
+        # Create mesh
+        print("\n1. Generando malla...")
+        if config['domain_type'] == "1":
+            mesh = rectangle_mesh(0, 1, 0, 1, h=config['h'])
+            dirichlet_boundaries = "left|right|bottom|top"
+            bc_label = "top"
+        else:
+            mesh = L_mesh(h=config['h'])
+            dirichlet_boundaries = "side"
+            bc_label = "flow_in"
+        
+        print(f"   ✓ Malla creada: {mesh.ne} elementos, {mesh.nv} vértices")
+        
+        # Boundary condition
+        u_bc = CF((1, 0))
+        
+        # Solve
+        print("\n2. Resolviendo ecuaciones de Navier-Stokes...")
+        
+        if config['solver_type'] == "1":
+            # Picard
+            solution, info = picard_iteration(
+                mesh, taylor_hood(mesh, dirichlet_boundaries),
+                bc_label, u_bc,
+                viscosity=config['viscosity'],
+                convection_form=config['convection_form'],
+                tolerance=config['tolerance'],
+                max_iterations=config['max_iter'],
+                verbose=True
+            )
+            
+        elif config['solver_type'] == "2":
+            # Newton
+            solution, info = newton_iteration(
+                mesh, taylor_hood(mesh, dirichlet_boundaries),
+                bc_label, u_bc,
+                viscosity=config['viscosity'],
+                tolerance=config['tolerance'],
+                max_iterations=config['max_iter'],
+                verbose=True
+            )
+            
+        else:
+            # Adaptive
+            solution, info = adaptive_solve(
+                mesh, bc_label, u_bc,
+                viscosity=config['viscosity'],
+                n_refinements=config['n_refinements'],
+                theta=config['theta'],
+                marking_strategy=config['marking_strategy'],
+                tolerance=config['tolerance'],
+                verbose=True
+            )
+        
+        # Results
+        print("\n" + "="*80)
+        print("SOLUCIÓN ENCONTRADA")
+        print("="*80)
+        
+        if config['solver_type'] in ["1", "2"]:
+            print(f"  Convergió: {'✓ Sí' if info['converged'] else '✗ No'}")
+            print(f"  Iteraciones: {info['iterations']}")
+            print(f"  Error final: {info['final_error']:.6e}")
+        else:
+            print(f"  Elementos finales: {info['n_elements'][-1]}")
+            print(f"  DOFs finales: {info['n_dofs'][-1]}")
+            print(f"  Error final: {info['eta_global'][-1]:.6e}")
+            if info['convergence_rate_eta']:
+                avg_rate = sum(info['convergence_rate_eta']) / len(info['convergence_rate_eta'])
+                print(f"  Tasa de convergencia: {avg_rate:.2f}")
+        
+        print("="*80)
+        
+        return solution, info, mesh
+        
+    except Exception as e:
+        print(f"\n❌ Error durante la solución: {e}")
+        import traceback
+        traceback.print_exc()
+        return None, None, None
+
+
+def visualize_results(solution, info, mesh, config):
+    """Visualize and save results."""
+    print("\n" + "="*80)
+    print("VISUALIZACIÓN Y EXPORTACIÓN")
+    print("="*80)
+    
+    # Visualize
+    visualize = get_choice("\n¿Visualizar solución? (s/n)", ["s", "n", "y"])
+    
+    if visualize in ["s", "y"]:
+        print("\nAbriendo ventanas de visualización...")
+        velocity = solution.components[0]
+        pressure = solution.components[1]
+        
+        Draw(velocity, mesh, "Velocidad")
+        Draw(pressure, mesh, "Presión")
+        print("  ✓ Ventanas abiertas (ciérralas para continuar)")
+    
+    # Save results
+    if config['solver_type'] == "3":
+        save = get_choice("\n¿Guardar resultados? (s/n)", ["s", "n", "y"])
+        
+        if save in ["s", "y"]:
+            from mmfem import generate_convergence_plot, export_results_latex
+            
+            try:
+                generate_convergence_plot(info, filename="convergence.png", show=False)
+                print("  ✓ Gráfico guardado: convergence.png")
+                
+                export_results_latex(info, filename="results.tex")
+                print("  ✓ Tabla LaTeX guardada: results.tex")
+            except Exception as e:
+                print(f"  ❌ Error guardando resultados: {e}")
+
 
 ###
 
@@ -223,10 +354,10 @@ def main():
                 input("\nPresiona Enter para volver al menú...")
                 continue
             
-            #solution, info, mesh = solve_problem(config)
+            solution, info, mesh = solve_problem(config)
             
-            #if solution is not None:
-            #    visualize_results(solution, info, mesh, config)
+            if solution is not None:
+                visualize_results(solution, info, mesh, config)
             
             input("\nPresiona Enter para volver al menú...")
         

@@ -183,3 +183,135 @@ Automatically refine the mesh based on error estimates:
 ## API Reference
 
 You can find the documentation [here](docs/build/index.html)
+
+
+## Mathematical Background
+
+### Navier-Stokes Equations
+
+MMfem solves the incompressible Navier-Stokes equations:
+
+```
+∂u/∂t - ν∆u + (u·∇)u + ∇p = f    in Ω
+                     ∇·u = 0    in Ω
+                       u = u_D  on ∂Ω_D
+          ν∂u/∂n - pn = g      on ∂Ω_N
+```
+
+where:
+- **u**: velocity field (vector)
+- **p**: pressure (scalar)
+- **ν**: kinematic viscosity
+- **f**: body force
+- **Ω**: computational domain
+
+### Weak Formulation
+
+Find (u, p) ∈ V × Q such that:
+
+```
+ν(∇u, ∇v) + ((u·∇)u, v) - (p, ∇·v) = (f, v)    ∀v ∈ V
+                            (∇·u, q) = 0         ∀q ∈ Q
+```
+
+### Discretization Methods
+
+#### Taylor-Hood Elements
+- **Velocity**: P_k vector elements (default k=2)
+- **Pressure**: P_{k-1} scalar elements
+- **Stability**: Inf-sup stable for k ≥ 2
+
+#### MINI Elements
+- **Velocity**: P1 + cubic bubble
+- **Pressure**: P1
+- **Stability**: Inf-sup stable
+
+### Linearization Schemes
+
+#### Picard Iteration
+Linearize by evaluating convection at previous iterate:
+```
+ν∆u^{n+1} - (u^n·∇)u^{n+1} + ∇p^{n+1} = f
+```
+- **Convergence**: Linear
+- **Robustness**: High for low Reynolds numbers
+
+#### Newton Iteration
+Use full Jacobian of nonlinear system:
+```
+J(u^n)[δu] = -R(u^n)
+```
+- **Convergence**: Quadratic
+- **Robustness**: Requires good initial guess
+
+## Project Structure
+
+```
+MMfem/
+├── mmfem/                   # Main package
+│   ├── __init__.py         # Package initialization
+│   ├── mesh.py             # Mesh generation
+│   ├── spaces.py           # FEM spaces
+│   ├── formulations.py     # Variational formulations
+│   ├── solvers.py          # Iterative solvers
+├── examples/               # Example scripts
+│   ├── lid_driven_cavity.py
+├── tests/                  # Unit tests
+│   ├── test_mesh.py
+├── docs/                   # Documentation
+│   ├── index.md
+├── README.md              # This file
+├── requirements.txt       # Dependencies
+└── LICENSE                # License file
+```
+
+## Contributing
+
+Contributions are welcome! Please follow these guidelines:
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+### Code Style
+
+- Follow [PEP 8](https://www.python.org/dev/peps/pep-0008/) style guide
+- Use type hints for function signatures
+- Write comprehensive docstrings (NumPy style)
+- Add unit tests for new features
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Citation
+
+If you use MMfem in your research, please cite:
+
+```bibtex
+@software{mmfem2026,
+  author = {Mendiluce, Mauricio},
+  title = {MMfem: Finite Element Method for Navier-Stokes Equations},
+  year = {2026},
+  url = {https://github.com/maurimendiluce/MMfem}
+}
+```
+
+## Acknowledgments
+
+- Built on top of [NGSolve](https://ngsolve.org/)
+- Inspired by classical FEM literature and best practices
+- Thanks to the NGSolve community for excellent documentation
+
+## References
+
+1. Elman, H., Silvester, D., & Wathen, A. (2014). *Finite Elements and Fast Iterative Solvers*. Oxford University Press.
+2. Girault, V., & Raviart, P. A. (1986). *Finite Element Methods for Navier-Stokes Equations*. Springer.
+3. Braess, D. (2007). *Finite Elements: Theory, Fast Solvers, and Applications*. Cambridge University Press.
+
+## Contact
+
+- GitHub: [@maurimendiluce](https://github.com/maurimendiluce)
+- Email: mmendiluce@dm.uba.ar
