@@ -20,7 +20,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Lid-driven cavity problem" href="../examples/lid_driven_cavity.html" />
+    <link rel="next" title="Lid-driven cavity stationary problem" href="../examples/lid_driven_cavity.html" />
     <link rel="prev" title="Formulations module" href="formulations.html" /> 
 </head>
 
@@ -52,11 +52,14 @@
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.solvers.compute_velocity_error"><code class="docutils literal notranslate"><span class="pre">compute_velocity_error()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.solvers.newton_iteration"><code class="docutils literal notranslate"><span class="pre">newton_iteration()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.solvers.picard_iteration"><code class="docutils literal notranslate"><span class="pre">picard_iteration()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mmfem.solvers.time_stepping_implicit"><code class="docutils literal notranslate"><span class="pre">time_stepping_implicit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mmfem.solvers.time_stepping_semiimplicit"><code class="docutils literal notranslate"><span class="pre">time_stepping_semiimplicit()</span></code></a></li>
 </ul>
 </li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../examples/lid_driven_cavity.html">Lid-driven cavity problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/lid_driven_cavity.html">Lid-driven cavity stationary problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/unsteady_cavity.html">Lid-driven cavity non stationary problem</a></li>
 </ul>
 
         </div>
@@ -97,36 +100,34 @@ compute_velocity_error: Compute relative H1 error between velocities</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="mmfem.solvers.compute_velocity_error">
 <span class="sig-prename descclassname"><span class="pre">mmfem.solvers.</span></span><span class="sig-name descname"><span class="pre">compute_velocity_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">velocity_new</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_old</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mmfem/solvers.html#compute_velocity_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mmfem.solvers.compute_velocity_error" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span></p>
-<p>Compute relative H1 error between two velocity fields.</p>
+<dd><p>Compute relative H1 error between two velocity fields.</p>
 <p>The relative error is defined as:</p>
 <div class="math notranslate nohighlight">
-\[error = ||\]</div>
+\[error = || \nabla (u_{new} - u_{old}) ||_{L^2} / || \nabla u_{new} ||_{L^2}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>velocity_new</strong> (<em>GridFunction</em>) – New velocity field</p></li>
+<li><p><strong>velocity_old</strong> (<em>GridFunction</em>) – Previous velocity field</p></li>
+<li><p><strong>mesh</strong> (<em>Mesh</em>) – Computational domain</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li></li>
+<li><p><em>float</em> – Relative H1 error</p></li>
+</ul>
 </p>
 </dd>
 </dl>
-<p>abla (u_{new} - u_{old}) ||_{L^2} / ||
-abla u_{new} ||_{L^2}</p>
-<blockquote>
-<div><dl class="simple">
-<dt>velocity_new<span class="classifier">GridFunction</span></dt><dd><p>New velocity field</p>
-</dd>
-<dt>velocity_old<span class="classifier">GridFunction</span></dt><dd><p>Previous velocity field</p>
-</dd>
-<dt>mesh<span class="classifier">Mesh</span></dt><dd><p>Computational domain</p>
-</dd>
-</dl>
-<dl class="simple">
-<dt>float</dt><dd><p>Relative H1 error</p>
-</dd>
-</dl>
+<p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">error</span> <span class="o">=</span> <span class="n">compute_velocity_error</span><span class="p">(</span><span class="n">u_new</span><span class="p">,</span> <span class="n">u_old</span><span class="p">,</span> <span class="n">mesh</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Relative error: </span><span class="si">{</span><span class="n">error</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -257,6 +258,126 @@ callback(iteration: int, solution: GridFunction, error: float)</p></li>
 - Switching to Newton iteration after Picard converges</p>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="mmfem.solvers.time_stepping_implicit">
+<span class="sig-prename descclassname"><span class="pre">mmfem.solvers.</span></span><span class="sig-name descname"><span class="pre">time_stepping_implicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_velocity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirichlet_boundaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_bc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_final</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viscosity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'picard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_nonlinear_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_frequency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mmfem/solvers.html#time_stepping_implicit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mmfem.solvers.time_stepping_implicit" title="Link to this definition"></a></dt>
+<dd><p>Solve time-dependent Navier-Stokes using fully implicit time stepping.</p>
+<p>The fully implicit scheme treats both diffusion and convection implicitly,
+requiring nonlinear iterations at each time step but allowing larger time steps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<em>Mesh</em>) – Computational domain</p></li>
+<li><p><strong>fespace</strong> (<em>FESpace</em>) – Product finite element space [V × Q × N]</p></li>
+<li><p><strong>initial_velocity</strong> (<em>GridFunction</em>) – Initial velocity field u^0</p></li>
+<li><p><strong>dirichlet_boundaries</strong> (<em>str</em>) – Boundary labels where Dirichlet conditions apply</p></li>
+<li><p><strong>velocity_bc</strong> (<em>CF</em>) – Dirichlet boundary data for velocity</p></li>
+<li><p><strong>dt</strong> (<em>float</em>) – Time step size Δt</p></li>
+<li><p><strong>T_final</strong> (<em>float</em>) – Final simulation time</p></li>
+<li><p><strong>viscosity</strong> (<em>float</em><em>, </em><em>optional</em>) – Kinematic viscosity ν (default: 1.0)</p></li>
+<li><p><strong>method</strong> (<em>{'picard'</em><em>, </em><em>'newton'}</em><em>, </em><em>optional</em>) – Linearization method for nonlinear iterations (default: ‘picard’)</p></li>
+<li><p><strong>tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – Convergence tolerance for nonlinear iterations (default: 1e-8)</p></li>
+<li><p><strong>max_nonlinear_iter</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum nonlinear iterations per time step (default: 20)</p></li>
+<li><p><strong>save_frequency</strong> (<em>int</em><em>, </em><em>optional</em>) – Save solution every N time steps (default: 1)</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>optional</em>) – Print progress information (default: True)</p></li>
+<li><p><strong>callback</strong> (<em>callable</em><em>, </em><em>optional</em>) – Function called after each saved time step</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>solutions</strong> (<em>list of GridFunction</em>) – List of solutions at saved time steps</p></li>
+<li><p><strong>times</strong> (<em>list of float</em>) – List of corresponding time values</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Fully implicit time stepping (allows larger time steps)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">solutions</span><span class="p">,</span> <span class="n">times</span> <span class="o">=</span> <span class="n">time_stepping_implicit</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">mesh</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">u0</span><span class="p">,</span> <span class="s2">&quot;top&quot;</span><span class="p">,</span> <span class="n">u_bc</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">dt</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>  <span class="c1"># Larger time step than semi-implicit</span>
+<span class="gp">... </span>    <span class="n">T_final</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">viscosity</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">method</span><span class="o">=</span><span class="s1">&#39;picard&#39;</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>Advantages of fully implicit scheme:
+- Unconditionally stable (no CFL restriction)
+- Can use larger time steps
+- Better for stiff problems</p>
+<p>Disadvantages:
+- Requires nonlinear iterations at each time step
+- More expensive per time step than semi-implicit</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mmfem.solvers.time_stepping_semiimplicit">
+<span class="sig-prename descclassname"><span class="pre">mmfem.solvers.</span></span><span class="sig-name descname"><span class="pre">time_stepping_semiimplicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_velocity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirichlet_boundaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_bc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_final</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viscosity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convection_form</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'standard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_frequency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mmfem/solvers.html#time_stepping_semiimplicit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mmfem.solvers.time_stepping_semiimplicit" title="Link to this definition"></a></dt>
+<dd><p>Solve time-dependent Navier-Stokes using semi-implicit time stepping.</p>
+<p>The semi-implicit scheme treats diffusion implicitly (unconditionally stable)
+and convection explicitly (requires CFL condition).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<em>Mesh</em>) – Computational domain</p></li>
+<li><p><strong>fespace</strong> (<em>FESpace</em>) – Product finite element space [V × Q × N]</p></li>
+<li><p><strong>initial_velocity</strong> (<em>GridFunction</em>) – Initial velocity field u^0</p></li>
+<li><p><strong>dirichlet_boundaries</strong> (<em>str</em>) – Boundary labels where Dirichlet conditions apply</p></li>
+<li><p><strong>velocity_bc</strong> (<em>CF</em>) – Dirichlet boundary data for velocity</p></li>
+<li><p><strong>dt</strong> (<em>float</em>) – Time step size Δt</p></li>
+<li><p><strong>T_final</strong> (<em>float</em>) – Final simulation time</p></li>
+<li><p><strong>viscosity</strong> (<em>float</em><em>, </em><em>optional</em>) – Kinematic viscosity ν (default: 1.0)</p></li>
+<li><p><strong>convection_form</strong> (<em>{'standard'</em><em>, </em><em>'divergence'</em><em>, </em><em>'skew_symmetric'}</em><em>, </em><em>optional</em>) – Form of the convection term (default: ‘standard’)</p></li>
+<li><p><strong>save_frequency</strong> (<em>int</em><em>, </em><em>optional</em>) – Save solution every N time steps (default: 1)</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>optional</em>) – Print progress information (default: True)</p></li>
+<li><p><strong>callback</strong> (<em>callable</em><em>, </em><em>optional</em>) – Function called after each saved time step with signature:
+callback(time: float, timestep: int, solution: GridFunction)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>solutions</strong> (<em>list of GridFunction</em>) – List of solutions at saved time steps</p></li>
+<li><p><strong>times</strong> (<em>list of float</em>) – List of corresponding time values</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">mmfem</span><span class="w"> </span><span class="kn">import</span> <span class="n">rectangle_mesh</span><span class="p">,</span> <span class="n">taylor_hood</span><span class="p">,</span> <span class="n">stokes_problem</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">ngsolve</span><span class="w"> </span><span class="kn">import</span> <span class="n">CF</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Setup</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">rectangle_mesh</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">taylor_hood</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="s2">&quot;left|right|bottom|top&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Initial condition (Stokes solution)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_bc</span> <span class="o">=</span> <span class="n">CF</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stokes_sol</span> <span class="o">=</span> <span class="n">stokes_problem</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="s2">&quot;top&quot;</span><span class="p">,</span> <span class="n">u_bc</span><span class="p">,</span> <span class="n">viscosity</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u0</span> <span class="o">=</span> <span class="n">stokes_sol</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Time stepping</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">solutions</span><span class="p">,</span> <span class="n">times</span> <span class="o">=</span> <span class="n">time_stepping_semiimplicit</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">mesh</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">u0</span><span class="p">,</span> <span class="s2">&quot;top&quot;</span><span class="p">,</span> <span class="n">u_bc</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">dt</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">T_final</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">viscosity</span><span class="o">=</span><span class="mf">0.01</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>CFL condition for stability of convection term:</p>
+<div class="math notranslate nohighlight">
+\[\Delta t \leq \frac{Ch}{||u||_{\infty}}\]</div>
+<p>where C ≈ 1 and h is the mesh size.</p>
+</dd></dl>
+
 </section>
 
 
@@ -264,7 +385,7 @@ callback(iteration: int, solution: GridFunction, error: float)</p></li>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="formulations.html" class="btn btn-neutral float-left" title="Formulations module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../examples/lid_driven_cavity.html" class="btn btn-neutral float-right" title="Lid-driven cavity problem" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../examples/lid_driven_cavity.html" class="btn btn-neutral float-right" title="Lid-driven cavity stationary problem" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

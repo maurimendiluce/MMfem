@@ -12,4 +12,5 @@ src/mmfem/formulations.py
 src/mmfem/mesh.py
 src/mmfem/solvers.py
 src/mmfem/spaces.py
+src/mmfem/vtk_utils.py
 tests/test_mesh.py

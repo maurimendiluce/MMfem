@@ -51,12 +51,16 @@
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.formulations.newton_step"><code class="docutils literal notranslate"><span class="pre">newton_step()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.formulations.picard_step"><code class="docutils literal notranslate"><span class="pre">picard_step()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.formulations.stokes_problem"><code class="docutils literal notranslate"><span class="pre">stokes_problem()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mmfem.formulations.unsteady_navier_stokes_implicit_step"><code class="docutils literal notranslate"><span class="pre">unsteady_navier_stokes_implicit_step()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mmfem.formulations.unsteady_navier_stokes_semiimplicit_step"><code class="docutils literal notranslate"><span class="pre">unsteady_navier_stokes_semiimplicit_step()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mmfem.formulations.unsteady_stokes_step"><code class="docutils literal notranslate"><span class="pre">unsteady_stokes_step()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="solvers.html">Solvers module</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../examples/lid_driven_cavity.html">Lid-driven cavity problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/lid_driven_cavity.html">Lid-driven cavity stationary problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/unsteady_cavity.html">Lid-driven cavity non stationary problem</a></li>
 </ul>
 
         </div>
@@ -246,6 +250,130 @@ such that</p>
 <p>The Lagrange multiplier enforces the constraint</p>
 <div class="math notranslate nohighlight">
 \[\int_\Omega p \, dx = 0\]</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mmfem.formulations.unsteady_navier_stokes_implicit_step">
+<span class="sig-prename descclassname"><span class="pre">mmfem.formulations.</span></span><span class="sig-name descname"><span class="pre">unsteady_navier_stokes_implicit_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_prev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_guess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirichlet_boundaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_bc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viscosity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'picard'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mmfem/formulations.html#unsteady_navier_stokes_implicit_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mmfem.formulations.unsteady_navier_stokes_implicit_step" title="Link to this definition"></a></dt>
+<dd><p>Perform one fully implicit time step for Navier-Stokes using linearization.</p>
+<p>Solves the nonlinear system at each time step:</p>
+<div class="math notranslate nohighlight">
+\[\frac{u^{n+1} - u^n}{\Delta t} - \nu \Delta u^{n+1}
++ (u^{n+1} \cdot \nabla)u^{n+1} + \nabla p^{n+1} = 0\]</div>
+<p>using either Picard or Newton linearization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<em>Mesh</em>) – Computational domain</p></li>
+<li><p><strong>fespace</strong> (<em>FESpace</em>) – Product finite element space [V × Q × N]</p></li>
+<li><p><strong>velocity_prev</strong> (<em>GridFunction</em>) – Velocity at previous time step u^n</p></li>
+<li><p><strong>velocity_guess</strong> (<em>GridFunction</em>) – Initial guess for u^{n+1} (for linearization)</p></li>
+<li><p><strong>dirichlet_boundaries</strong> (<em>str</em>) – Boundary labels where Dirichlet conditions apply</p></li>
+<li><p><strong>velocity_bc</strong> (<em>CF</em>) – Dirichlet boundary data for velocity</p></li>
+<li><p><strong>dt</strong> (<em>float</em>) – Time step size Δt</p></li>
+<li><p><strong>viscosity</strong> (<em>float</em><em>, </em><em>optional</em>) – Kinematic viscosity ν (default: 1.0)</p></li>
+<li><p><strong>method</strong> (<em>{'picard'</em><em>, </em><em>'newton'}</em><em>, </em><em>optional</em>) – Linearization method (default: ‘picard’)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Updated solution (one linearization step)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>GridFunction</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This function performs ONE linearization step. For full convergence,
+call iteratively until ||u^{k+1} - u^k|| &lt; tolerance.</p>
+<p>Use <cite>time_stepping_implicit</cite> solver for automatic iteration management.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mmfem.formulations.unsteady_navier_stokes_semiimplicit_step">
+<span class="sig-prename descclassname"><span class="pre">mmfem.formulations.</span></span><span class="sig-name descname"><span class="pre">unsteady_navier_stokes_semiimplicit_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_prev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirichlet_boundaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_bc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viscosity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convection_form</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'standard'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mmfem/formulations.html#unsteady_navier_stokes_semiimplicit_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mmfem.formulations.unsteady_navier_stokes_semiimplicit_step" title="Link to this definition"></a></dt>
+<dd><p>Perform one semi-implicit time step for Navier-Stokes.</p>
+<p>Uses backward Euler for diffusion and explicit treatment of convection:</p>
+<div class="math notranslate nohighlight">
+\[\frac{u^{n+1} - u^n}{\Delta t} - \nu \Delta u^{n+1}
++ (u^n \cdot \nabla)u^n + \nabla p^{n+1} = 0\]</div>
+<p>This is unconditionally stable for diffusion but has CFL restriction
+for convection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<em>Mesh</em>) – Computational domain</p></li>
+<li><p><strong>fespace</strong> (<em>FESpace</em>) – Product finite element space [V × Q × N]</p></li>
+<li><p><strong>velocity_prev</strong> (<em>GridFunction</em>) – Velocity at previous time step u^n</p></li>
+<li><p><strong>dirichlet_boundaries</strong> (<em>str</em>) – Boundary labels where Dirichlet conditions apply</p></li>
+<li><p><strong>velocity_bc</strong> (<em>CF</em>) – Dirichlet boundary data for velocity</p></li>
+<li><p><strong>dt</strong> (<em>float</em>) – Time step size Δt</p></li>
+<li><p><strong>viscosity</strong> (<em>float</em><em>, </em><em>optional</em>) – Kinematic viscosity ν (default: 1.0)</p></li>
+<li><p><strong>convection_form</strong> (<em>{'standard'</em><em>, </em><em>'divergence'</em><em>, </em><em>'skew_symmetric'}</em><em>, </em><em>optional</em>) – Form of the convection term (default: ‘standard’)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Solution at new time step</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>GridFunction</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Semi-implicit scheme:
+- Implicit: time derivative + viscous term → unconditionally stable
+- Explicit: convection term → CFL condition required
+- Linear system to solve at each time step (no iterations needed)
+- Efficient for moderate Reynolds numbers</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mmfem.formulations.unsteady_stokes_step">
+<span class="sig-prename descclassname"><span class="pre">mmfem.formulations.</span></span><span class="sig-name descname"><span class="pre">unsteady_stokes_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_prev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirichlet_boundaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_bc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viscosity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mmfem/formulations.html#unsteady_stokes_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mmfem.formulations.unsteady_stokes_step" title="Link to this definition"></a></dt>
+<dd><p>Perform one time step for the unsteady Stokes problem.</p>
+<p>Solves the time-dependent Stokes equations using theta-method:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\frac{u^{n+1} - u^n}{\Delta t} - \nu \Delta u^{n+\theta} + \nabla p^{n+1} = 0 \\
+\nabla \cdot u^{n+1} = 0\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(u^{n+\theta} = \theta u^{n+1} + (1-\theta) u^n\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<em>Mesh</em>) – Computational domain</p></li>
+<li><p><strong>fespace</strong> (<em>FESpace</em>) – Product finite element space [V × Q × N]</p></li>
+<li><p><strong>velocity_prev</strong> (<em>GridFunction</em>) – Velocity at previous time step u^n</p></li>
+<li><p><strong>dirichlet_boundaries</strong> (<em>str</em>) – Boundary labels where Dirichlet conditions apply</p></li>
+<li><p><strong>velocity_bc</strong> (<em>CF</em>) – Dirichlet boundary data for velocity</p></li>
+<li><p><strong>dt</strong> (<em>float</em>) – Time step size Δt</p></li>
+<li><p><strong>viscosity</strong> (<em>float</em><em>, </em><em>optional</em>) – Kinematic viscosity ν (default: 1.0)</p></li>
+<li><p><strong>theta</strong> (<em>float</em><em>, </em><em>optional</em>) – Time discretization parameter (default: 1.0)
+- theta = 0.0: Forward Euler (explicit)
+- theta = 0.5: Crank-Nicolson (second order)
+- theta = 1.0: Backward Euler (implicit, unconditionally stable)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Solution at new time step (u^{n+1}, p^{n+1}, λ^{n+1})</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>GridFunction</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Time stepping loop</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_n</span> <span class="o">=</span> <span class="n">initial_velocity</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_steps</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">solution</span> <span class="o">=</span> <span class="n">unsteady_stokes_step</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">u_n</span><span class="p">,</span> <span class="s2">&quot;walls&quot;</span><span class="p">,</span> <span class="n">u_bc</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">u_n</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>The weak formulation finds <span class="math notranslate nohighlight">\((u^{n+1}, p^{n+1}, \lambda^{n+1})\)</span>
+such that</p>
+<div class="math notranslate nohighlight">
+\[\frac{1}{\Delta t}(u^{n+1}, v) + \theta \nu (\nabla u^{n+1}, \nabla v)
+- (p^{n+1}, \nabla \cdot v) = \frac{1}{\Delta t}(u^n, v)
++ (1-\theta) \nu (\nabla u^n, \nabla v)\]</div>
+<p>for all test functions v, plus the incompressibility constraint.</p>
 </dd></dl>
 
 </section>

@@ -26,18 +26,26 @@ Authors:
     Mauricio Mendiluce
 
 Version:
-    0.1.0
+    0.2.0
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Mauricio Mendiluce"
 __email__ = "mmendiluce@dm.uba.ar"
 
 # Import main components for easier access
 from .mesh import rectangle_mesh, L_mesh, get_boundary_labels, get_dirichlet_boundaries
 from .spaces import taylor_hood, mini_elements, get_space_info
-from .formulations import stokes_problem, picard_step, newton_step
-from .solvers import picard_iteration, newton_iteration
+from .formulations import (
+    stokes_problem, picard_step, newton_step,
+    unsteady_stokes_step, unsteady_navier_stokes_semiimplicit_step,
+    unsteady_navier_stokes_implicit_step
+)
+from .solvers import (
+    picard_iteration, newton_iteration, compute_velocity_error,
+    time_stepping_semiimplicit, time_stepping_implicit
+)
+from .vtk_utils import export_time_series, export_single_timestep, export_comparison
 
 __all__ = [
     # Mesh functions
@@ -51,12 +59,27 @@ __all__ = [
     "mini_elements",
     "get_space_info",
     
-    # Problem formulations
+    # Steady-state problem formulations
     "stokes_problem",
     "picard_step",
     "newton_step",
     
-    # Solvers
+    # Unsteady problem formulations
+    "unsteady_stokes_step",
+    "unsteady_navier_stokes_semiimplicit_step",
+    "unsteady_navier_stokes_implicit_step",
+    
+    # Steady-state solvers
     "picard_iteration",
     "newton_iteration",
+    
+    # Unsteady solvers
+    "time_stepping_semiimplicit",
+    "time_stepping_implicit",
+    "compute_velocity_error",
+    
+    # VTK export utilities
+    "export_time_series",
+    "export_single_timestep",
+    "export_comparison",
 ]

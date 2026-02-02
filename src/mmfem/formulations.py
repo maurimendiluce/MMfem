@@ -354,3 +354,354 @@ def newton_step(
     solution.vec.data += inverse * residual
 
     return solution
+
+def unsteady_stokes_step(
+    mesh: Mesh,
+    fespace: FESpace,
+    velocity_prev: GridFunction,
+    dirichlet_boundaries: str,
+    velocity_bc: CF,
+    dt: float,
+    viscosity: float = 1.0,
+    theta: float = 1.0
+) -> GridFunction:
+    """
+    Perform one time step for the unsteady Stokes problem.
+
+    Solves the time-dependent Stokes equations using theta-method:
+
+    .. math::
+
+        \\frac{u^{n+1} - u^n}{\\Delta t} - \\nu \\Delta u^{n+\\theta} + \\nabla p^{n+1} = 0 \\\\
+        \\nabla \\cdot u^{n+1} = 0
+
+    where :math:`u^{n+\\theta} = \\theta u^{n+1} + (1-\\theta) u^n`.
+
+    Parameters
+    ----------
+    mesh : Mesh
+        Computational domain
+    fespace : FESpace
+        Product finite element space [V × Q × N]
+    velocity_prev : GridFunction
+        Velocity at previous time step u^n
+    dirichlet_boundaries : str
+        Boundary labels where Dirichlet conditions apply
+    velocity_bc : CF
+        Dirichlet boundary data for velocity
+    dt : float
+        Time step size Δt
+    viscosity : float, optional
+        Kinematic viscosity ν (default: 1.0)
+    theta : float, optional
+        Time discretization parameter (default: 1.0)
+        - theta = 0.0: Forward Euler (explicit)
+        - theta = 0.5: Crank-Nicolson (second order)
+        - theta = 1.0: Backward Euler (implicit, unconditionally stable)
+
+    Returns
+    -------
+    GridFunction
+        Solution at new time step (u^{n+1}, p^{n+1}, λ^{n+1})
+
+    Examples
+    --------
+    >>> # Time stepping loop
+    >>> u_n = initial_velocity
+    >>> for n in range(num_steps):
+    ...     solution = unsteady_stokes_step(mesh, X, u_n, "walls", u_bc, dt=0.01)
+    ...     u_n = solution.components[0]
+
+    Notes
+    -----
+    The weak formulation finds :math:`(u^{n+1}, p^{n+1}, \\lambda^{n+1})`
+    such that
+
+    .. math::
+
+        \\frac{1}{\\Delta t}(u^{n+1}, v) + \\theta \\nu (\\nabla u^{n+1}, \\nabla v)
+        - (p^{n+1}, \\nabla \\cdot v) = \\frac{1}{\\Delta t}(u^n, v) 
+        + (1-\\theta) \\nu (\\nabla u^n, \\nabla v)
+
+    for all test functions v, plus the incompressibility constraint.
+    """
+    # Extract test and trial functions
+    (u, p, lam), (v, q, mu) = fespace.TnT()
+
+    # Bilinear form: implicit terms
+    a = BilinearForm(fespace)
+    
+    # Time derivative (implicit part: u^{n+1}/dt)
+    a += (1.0 / dt) * InnerProduct(u, v) * dx
+    
+    # Viscous term (theta-method: theta * viscosity * grad(u^{n+1}))
+    a += theta * viscosity * InnerProduct(grad(u), grad(v)) * dx
+    
+    # Pressure and incompressibility
+    a += -div(u) * q * dx
+    a += -div(v) * p * dx
+    a += -lam * q * dx
+    a += -mu * p * dx
+    
+    a.Assemble()
+
+    # Linear form: explicit terms (right-hand side)
+    f = LinearForm(fespace)
+    
+    # Time derivative (explicit part: u^n/dt)
+    f += (1.0 / dt) * InnerProduct(velocity_prev, v) * dx
+    
+    # Viscous term (explicit part: (1-theta) * viscosity * grad(u^n))
+    if theta < 1.0:
+        f += (1.0 - theta) * viscosity * InnerProduct(grad(velocity_prev), grad(v)) * dx
+    
+    f.Assemble()
+
+    # Solution vector
+    solution = GridFunction(fespace)
+    
+    # Apply Dirichlet boundary conditions
+    solution.components[0].Set(
+        velocity_bc,
+        definedon=mesh.Boundaries(dirichlet_boundaries)
+    )
+
+    # Solve the linear system
+    residual = f.vec.CreateVector()
+    residual.data = f.vec - a.mat * solution.vec
+    
+    inverse = a.mat.Inverse(freedofs=fespace.FreeDofs())
+    solution.vec.data += inverse * residual
+
+    return solution
+
+
+def unsteady_navier_stokes_semiimplicit_step(
+    mesh: Mesh,
+    fespace: FESpace,
+    velocity_prev: GridFunction,
+    dirichlet_boundaries: str,
+    velocity_bc: CF,
+    dt: float,
+    viscosity: float = 1.0,
+    convection_form: ConvectionType = "standard"
+) -> GridFunction:
+    """
+    Perform one semi-implicit time step for Navier-Stokes.
+
+    Uses backward Euler for diffusion and explicit treatment of convection:
+
+    .. math::
+
+        \\frac{u^{n+1} - u^n}{\\Delta t} - \\nu \\Delta u^{n+1} 
+        + (u^n \\cdot \\nabla)u^n + \\nabla p^{n+1} = 0
+
+    This is unconditionally stable for diffusion but has CFL restriction
+    for convection.
+
+    Parameters
+    ----------
+    mesh : Mesh
+        Computational domain
+    fespace : FESpace
+        Product finite element space [V × Q × N]
+    velocity_prev : GridFunction
+        Velocity at previous time step u^n
+    dirichlet_boundaries : str
+        Boundary labels where Dirichlet conditions apply
+    velocity_bc : CF
+        Dirichlet boundary data for velocity
+    dt : float
+        Time step size Δt
+    viscosity : float, optional
+        Kinematic viscosity ν (default: 1.0)
+    convection_form : {'standard', 'divergence', 'skew_symmetric'}, optional
+        Form of the convection term (default: 'standard')
+
+    Returns
+    -------
+    GridFunction
+        Solution at new time step
+
+    Notes
+    -----
+    Semi-implicit scheme:
+    - Implicit: time derivative + viscous term → unconditionally stable
+    - Explicit: convection term → CFL condition required
+    - Linear system to solve at each time step (no iterations needed)
+    - Efficient for moderate Reynolds numbers
+    """
+    # Extract test and trial functions
+    (u, p, lam), (v, q, mu) = fespace.TnT()
+
+    # Bilinear form: implicit terms
+    a = BilinearForm(fespace)
+    
+    # Time derivative
+    a += (1.0 / dt) * InnerProduct(u, v) * dx
+    
+    # Viscous term (implicit)
+    a += viscosity * InnerProduct(grad(u), grad(v)) * dx
+    
+    # Pressure and incompressibility
+    a += -div(u) * q * dx
+    a += -div(v) * p * dx
+    a += -lam * q * dx
+    a += -mu * p * dx
+    
+    a.Assemble()
+
+    # Linear form: explicit terms
+    f = LinearForm(fespace)
+    
+    # Time derivative (u^n term)
+    f += (1.0 / dt) * InnerProduct(velocity_prev, v) * dx
+    
+    # Convection term (explicit: evaluated at u^n)
+    if convection_form == "standard":
+        convection_rhs = -InnerProduct(Grad(velocity_prev) * velocity_prev, v) * dx
+    elif convection_form == "divergence":
+        convection_rhs = (
+            -InnerProduct(Grad(velocity_prev) * velocity_prev, v) * dx -
+            0.5 * InnerProduct(div(velocity_prev) * velocity_prev, v) * dx
+        )
+    elif convection_form == "skew_symmetric":
+        convection_rhs = (
+            -0.5 * InnerProduct(Grad(velocity_prev) * velocity_prev, v) * dx +
+            0.5 * InnerProduct(Grad(velocity_prev) * v, velocity_prev) * dx
+        )
+    else:
+        raise ValueError(
+            f"Invalid convection_form '{convection_form}'. "
+            f"Must be 'standard', 'divergence', or 'skew_symmetric'."
+        )
+    
+    f += convection_rhs
+    f.Assemble()
+
+    # Solution vector
+    solution = GridFunction(fespace)
+    solution.components[0].Set(
+        velocity_bc,
+        definedon=mesh.Boundaries(dirichlet_boundaries)
+    )
+
+    # Solve
+    residual = f.vec.CreateVector()
+    residual.data = f.vec - a.mat * solution.vec
+    inverse = a.mat.Inverse(freedofs=fespace.FreeDofs())
+    solution.vec.data += inverse * residual
+
+    return solution
+
+
+def unsteady_navier_stokes_implicit_step(
+    mesh: Mesh,
+    fespace: FESpace,
+    velocity_prev: GridFunction,
+    velocity_guess: GridFunction,
+    dirichlet_boundaries: str,
+    velocity_bc: CF,
+    dt: float,
+    viscosity: float = 1.0,
+    method: Literal["picard", "newton"] = "picard"
+) -> GridFunction:
+    """
+    Perform one fully implicit time step for Navier-Stokes using linearization.
+
+    Solves the nonlinear system at each time step:
+
+    .. math::
+
+        \\frac{u^{n+1} - u^n}{\\Delta t} - \\nu \\Delta u^{n+1} 
+        + (u^{n+1} \\cdot \\nabla)u^{n+1} + \\nabla p^{n+1} = 0
+
+    using either Picard or Newton linearization.
+
+    Parameters
+    ----------
+    mesh : Mesh
+        Computational domain
+    fespace : FESpace
+        Product finite element space [V × Q × N]
+    velocity_prev : GridFunction
+        Velocity at previous time step u^n
+    velocity_guess : GridFunction
+        Initial guess for u^{n+1} (for linearization)
+    dirichlet_boundaries : str
+        Boundary labels where Dirichlet conditions apply
+    velocity_bc : CF
+        Dirichlet boundary data for velocity
+    dt : float
+        Time step size Δt
+    viscosity : float, optional
+        Kinematic viscosity ν (default: 1.0)
+    method : {'picard', 'newton'}, optional
+        Linearization method (default: 'picard')
+
+    Returns
+    -------
+    GridFunction
+        Updated solution (one linearization step)
+
+    Notes
+    -----
+    This function performs ONE linearization step. For full convergence,
+    call iteratively until ||u^{k+1} - u^k|| < tolerance.
+    
+    Use `time_stepping_implicit` solver for automatic iteration management.
+    """
+    # Extract test and trial functions
+    (u, p, lam), (v, q, mu) = fespace.TnT()
+
+    # Bilinear form
+    a = BilinearForm(fespace)
+    
+    # Time derivative
+    a += (1.0 / dt) * InnerProduct(u, v) * dx
+    
+    # Viscous term
+    a += viscosity * InnerProduct(Grad(u), Grad(v)) * dx
+    
+    # Pressure and incompressibility
+    a += -div(u) * q * dx
+    a += -div(v) * p * dx
+    a += -lam * q * dx
+    a += -mu * p * dx
+
+    # Convection term (linearized)
+    if method == "picard":
+        # Picard: (u_guess · ∇)u
+        convection = InnerProduct(Grad(u) * velocity_guess, v) * dx
+    elif method == "newton":
+        # Newton: (u_guess · ∇)u + (u · ∇)u_guess - (u_guess · ∇)u_guess
+        convection = (
+            InnerProduct(Grad(u) * velocity_guess, v) * dx +
+            InnerProduct(Grad(velocity_guess) * u, v) * dx -
+            InnerProduct(Grad(velocity_guess) * velocity_guess, v) * dx
+        )
+    else:
+        raise ValueError(f"Invalid method '{method}'. Must be 'picard' or 'newton'.")
+    
+    a += convection
+    a.Assemble()
+
+    # Linear form: time derivative term from u^n
+    f = LinearForm(fespace)
+    f += (1.0 / dt) * InnerProduct(velocity_prev, v) * dx
+    f.Assemble()
+
+    # Solution
+    solution = GridFunction(fespace)
+    solution.components[0].Set(
+        velocity_bc,
+        definedon=mesh.Boundaries(dirichlet_boundaries)
+    )
+
+    # Solve
+    residual = f.vec.CreateVector()
+    residual.data = f.vec - a.mat * solution.vec
+    inverse = a.mat.Inverse(freedofs=fespace.FreeDofs())
+    solution.vec.data += inverse * residual
+
+    return solution

@@ -10,10 +10,10 @@ Functions:
     compute_velocity_error: Compute relative H1 error between velocities
 """
 
-from typing import Tuple, Optional, Callable
+from typing import Tuple, Optional, Callable, Literal
 import numpy as np
 from ngsolve import (
-    Mesh, FESpace, GridFunction, CF, Integrate, sqrt, InnerProduct, Grad
+    Mesh, FESpace, GridFunction, CF, Integrate, sqrt, InnerProduct, Grad, VTKOutput
 )
 
 from .formulations import stokes_problem, picard_step, newton_step, ConvectionType
@@ -31,7 +31,7 @@ def compute_velocity_error(
 
     .. math::
 
-        error = || \nabla (u_{new} - u_{old}) ||_{L^2} / || \nabla u_{new} ||_{L^2}
+        error = || \\nabla (u_{new} - u_{old}) ||_{L^2} / || \\nabla u_{new} ||_{L^2}
 
     Parameters
     ----------
@@ -45,7 +45,7 @@ def compute_velocity_error(
 
     Returns
     -------
-
+    
     float
         Relative H1 error
 
@@ -405,3 +405,321 @@ def newton_iteration(
         f"Newton iteration did not converge in {max_iterations} iterations. "
         f"Final error: {errors[-1]:.6e}"
     )
+
+def time_stepping_semiimplicit(
+    mesh: Mesh,
+    fespace: FESpace,
+    initial_velocity: GridFunction,
+    dirichlet_boundaries: str,
+    velocity_bc: CF,
+    dt: float,
+    T_final: float,
+    viscosity: float = 1.0,
+    convection_form: ConvectionType = "standard",
+    save_frequency: int = 1,
+    verbose: bool = True,
+    callback: Optional[Callable] = None
+) -> Tuple[list, list]:
+    """
+    Solve time-dependent Navier-Stokes using semi-implicit time stepping.
+
+    The semi-implicit scheme treats diffusion implicitly (unconditionally stable)
+    and convection explicitly (requires CFL condition).
+
+    Parameters
+    ----------
+    mesh : Mesh
+        Computational domain
+    fespace : FESpace
+        Product finite element space [V × Q × N]
+    initial_velocity : GridFunction
+        Initial velocity field u^0
+    dirichlet_boundaries : str
+        Boundary labels where Dirichlet conditions apply
+    velocity_bc : CF
+        Dirichlet boundary data for velocity
+    dt : float
+        Time step size Δt
+    T_final : float
+        Final simulation time
+    viscosity : float, optional
+        Kinematic viscosity ν (default: 1.0)
+    convection_form : {'standard', 'divergence', 'skew_symmetric'}, optional
+        Form of the convection term (default: 'standard')
+    save_frequency : int, optional
+        Save solution every N time steps (default: 1)
+    verbose : bool, optional
+        Print progress information (default: True)
+    callback : callable, optional
+        Function called after each saved time step with signature:
+        callback(time: float, timestep: int, solution: GridFunction)
+
+    Returns
+    -------
+    solutions : list of GridFunction
+        List of solutions at saved time steps
+    times : list of float
+        List of corresponding time values
+
+    Examples
+    --------
+    >>> from mmfem import rectangle_mesh, taylor_hood, stokes_problem
+    >>> from ngsolve import CF
+    >>> 
+    >>> # Setup
+    >>> mesh = rectangle_mesh(0, 1, 0, 1, h=0.05)
+    >>> X = taylor_hood(mesh, "left|right|bottom|top")
+    >>> 
+    >>> # Initial condition (Stokes solution)
+    >>> u_bc = CF((1, 0))
+    >>> stokes_sol = stokes_problem(mesh, X, "top", u_bc, viscosity=0.01)
+    >>> u0 = stokes_sol.components[0]
+    >>> 
+    >>> # Time stepping
+    >>> solutions, times = time_stepping_semiimplicit(
+    ...     mesh, X, u0, "top", u_bc,
+    ...     dt=0.01, T_final=1.0,
+    ...     viscosity=0.01
+    ... )
+
+    Notes
+    -----
+    CFL condition for stability of convection term:
+    
+    .. math::
+    
+        \\Delta t \\leq \\frac{Ch}{||u||_{\\infty}}
+    
+    where C ≈ 1 and h is the mesh size.
+    """
+    from .formulations import unsteady_navier_stokes_semiimplicit_step
+
+    if verbose:
+        print("=" * 70)
+        print("Semi-Implicit Time Stepping for Navier-Stokes")
+        print("=" * 70)
+        print(f"Time step (Δt): {dt}")
+        print(f"Final time (T): {T_final}")
+        print(f"Viscosity (ν): {viscosity}")
+        print(f"Convection form: {convection_form}")
+        print(f"Number of steps: {int(T_final / dt)}")
+        print("-" * 70)
+
+    # Initialize
+    velocity_n = initial_velocity
+    time = 0.0
+    timestep = 0
+    
+    solutions = []
+    times = []
+    
+    # Save initial condition
+    solution_0 = GridFunction(fespace)
+    solution_0.components[0].vec.data = velocity_n.vec
+    solutions.append(solution_0)
+    times.append(0.0)
+    # Time stepping loop
+    while time < T_final - 1e-10:
+        # Adjust last time step
+        if time + dt > T_final:
+            dt = T_final - time
+        
+        # Perform one time step
+        solution = unsteady_navier_stokes_semiimplicit_step(
+            mesh, fespace, velocity_n,
+            dirichlet_boundaries, velocity_bc,
+            dt, viscosity, convection_form
+        )
+        # Update
+        velocity_n = solution.components[0]
+        time += dt
+        timestep += 1
+        # Verbose output
+        if verbose and timestep % max(1, save_frequency) == 0:
+            print(f"Step {timestep:4d} | Time: {time:6.4f} | dt: {dt:.6f}")
+        
+        # Save solution
+        if timestep % save_frequency == 0:
+            solutions.append(solution)
+            times.append(time)
+            
+            # Call callback
+            if callback is not None:
+                callback(time, timestep, solution)
+    
+    if verbose:
+        print("-" * 70)
+        print(f"✓ Simulation complete: {timestep} time steps")
+        print("=" * 70)
+    
+    return solutions, times
+
+
+def time_stepping_implicit(
+    mesh: Mesh,
+    fespace: FESpace,
+    initial_velocity: GridFunction,
+    dirichlet_boundaries: str,
+    velocity_bc: CF,
+    dt: float,
+    T_final: float,
+    viscosity: float = 1.0,
+    method: Literal["picard", "newton"] = "picard",
+    tolerance: float = 1e-8,
+    max_nonlinear_iter: int = 20,
+    save_frequency: int = 1,
+    verbose: bool = True,
+    callback: Optional[Callable] = None
+) -> Tuple[list, list]:
+    """
+    Solve time-dependent Navier-Stokes using fully implicit time stepping.
+
+    The fully implicit scheme treats both diffusion and convection implicitly,
+    requiring nonlinear iterations at each time step but allowing larger time steps.
+
+    Parameters
+    ----------
+    mesh : Mesh
+        Computational domain
+    fespace : FESpace
+        Product finite element space [V × Q × N]
+    initial_velocity : GridFunction
+        Initial velocity field u^0
+    dirichlet_boundaries : str
+        Boundary labels where Dirichlet conditions apply
+    velocity_bc : CF
+        Dirichlet boundary data for velocity
+    dt : float
+        Time step size Δt
+    T_final : float
+        Final simulation time
+    viscosity : float, optional
+        Kinematic viscosity ν (default: 1.0)
+    method : {'picard', 'newton'}, optional
+        Linearization method for nonlinear iterations (default: 'picard')
+    tolerance : float, optional
+        Convergence tolerance for nonlinear iterations (default: 1e-8)
+    max_nonlinear_iter : int, optional
+        Maximum nonlinear iterations per time step (default: 20)
+    save_frequency : int, optional
+        Save solution every N time steps (default: 1)
+    verbose : bool, optional
+        Print progress information (default: True)
+    callback : callable, optional
+        Function called after each saved time step
+
+    Returns
+    -------
+    solutions : list of GridFunction
+        List of solutions at saved time steps
+    times : list of float
+        List of corresponding time values
+
+    Examples
+    --------
+    >>> # Fully implicit time stepping (allows larger time steps)
+    >>> solutions, times = time_stepping_implicit(
+    ...     mesh, X, u0, "top", u_bc,
+    ...     dt=0.05,  # Larger time step than semi-implicit
+    ...     T_final=1.0,
+    ...     viscosity=0.01,
+    ...     method='picard'
+    ... )
+
+    Notes
+    -----
+    Advantages of fully implicit scheme:
+    - Unconditionally stable (no CFL restriction)
+    - Can use larger time steps
+    - Better for stiff problems
+
+    Disadvantages:
+    - Requires nonlinear iterations at each time step
+    - More expensive per time step than semi-implicit
+    """
+    from .formulations import unsteady_navier_stokes_implicit_step
+
+    if verbose:
+        print("=" * 70)
+        print("Fully Implicit Time Stepping for Navier-Stokes")
+        print("=" * 70)
+        print(f"Time step (Δt): {dt}")
+        print(f"Final time (T): {T_final}")
+        print(f"Viscosity (ν): {viscosity}")
+        print(f"Method: {method}")
+        print(f"Nonlinear tolerance: {tolerance:.2e}")
+        print(f"Max nonlinear iterations: {max_nonlinear_iter}")
+        print(f"Number of steps: {int(T_final / dt)}")
+        print("-" * 70)
+
+    # Initialize
+    velocity_n = initial_velocity
+    time = 0.0
+    timestep = 0
+    
+    solutions = []
+    times = []
+    
+    # Save initial condition
+    solution_0 = GridFunction(fespace)
+    solution_0.components[0].vec.data = velocity_n.vec
+    solutions.append(solution_0)
+    times.append(0.0)
+
+    # Time stepping loop
+    while time < T_final - 1e-10:
+        # Adjust last time step
+        if time + dt > T_final:
+            dt = T_final - time
+        
+        # Nonlinear iteration for this time step
+        velocity_guess = velocity_n  # Use previous time step as initial guess
+        
+        for nl_iter in range(max_nonlinear_iter):
+            # Perform one linearization step
+            solution = unsteady_navier_stokes_implicit_step(
+                mesh, fespace, velocity_n, velocity_guess,
+                dirichlet_boundaries, velocity_bc,
+                dt, viscosity, method
+            )
+            
+            velocity_new = solution.components[0]
+            
+            # Compute nonlinear iteration error
+            error = compute_velocity_error(velocity_new, velocity_guess, mesh)
+            
+            if verbose and timestep % save_frequency == 0:
+                if nl_iter == 0:
+                    print(f"Step {timestep:4d} | Time: {time:6.4f}")
+                print(f"  NL iter {nl_iter:2d} | Error: {error:.6e}")
+            
+            # Check convergence
+            if error < tolerance:
+                break
+            
+            velocity_guess = velocity_new
+        
+        if nl_iter == max_nonlinear_iter - 1 and error >= tolerance:
+            print(f"WARNING: Nonlinear iteration did not converge at time {time:.4f}")
+            print(f"         Final error: {error:.6e}")
+        
+        # Update for next time step
+        velocity_n = velocity_new
+        time += dt
+        timestep += 1
+        
+        # Save solution
+        if timestep % save_frequency == 0:
+            solutions.append(solution)
+            times.append(time)
+            
+            # Call callback
+            if callback is not None:
+                callback(time, timestep, solution)
+    
+    if verbose:
+        print("-" * 70)
+        print(f"✓ Simulation complete: {timestep} time steps")
+        print("=" * 70)
+    
+    return solutions, times

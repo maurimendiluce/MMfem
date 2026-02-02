@@ -101,6 +101,7 @@ Examples
    :maxdepth: 1
 
    examples/lid_driven_cavity
+   examples/unsteady_cavity
 
    
 ----

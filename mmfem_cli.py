@@ -2,6 +2,7 @@
 MMfem Interactive Command Line Interface
 
 Interactive tool for solving Navier-Stokes problems without writing code.
+Supports both steady-state and time-dependent (unsteady) problems.
 """
 
 import sys
@@ -21,6 +22,7 @@ def print_header():
     print("="*80)
     print(" "*25 + "MMfem - Interactive CLI")
     print(" "*15 + "Navier-Stokes Finite Element Solver")
+    print(" "*20 + "(Steady & Unsteady Problems)")
     print("="*80)
 
 
@@ -89,6 +91,14 @@ def setup_problem():
     print("CONFIGURACIÓN DEL PROBLEMA")
     print("="*80)
     
+    # 0. Problem type (steady vs unsteady)
+    print_menu("0. Tipo de problema:", {
+        "1": "Estacionario (steady-state)",
+        "2": "Evolutivo (time-dependent)"
+    })
+    problem_type = get_choice("Opción", ["1", "2"])
+    is_unsteady = (problem_type == "2")
+    
     # 1. Domain selection
     print_menu("1. Selecciona el dominio:", {
         "1": "Rectángulo (cavity flow)",
@@ -97,7 +107,7 @@ def setup_problem():
     domain_type = get_choice("Opción", ["1", "2"])
     
     # 2. Mesh size
-    print("\n2. Tamaño de malla inicial")
+    print("\n2. Tamaño de malla")
     if domain_type == "1":
         h = get_float("Tamaño de malla h", default=0.05, min_val=0.01)
     else:
@@ -109,16 +119,54 @@ def setup_problem():
     reynolds = 1.0 / viscosity
     print(f"   → Número de Reynolds: Re ≈ {reynolds:.0f}")
     
-    # 4. Solver selection
-    print_menu("4. Selecciona el método de solución:", {
-        "1": "Picard (robusto, convergencia lineal)",
-        "2": "Newton (rápido, convergencia cuadrática)",
-        "3": "Adaptativo (refinamiento automático de malla)"
-    })
-    solver_type = get_choice("Opción", ["1", "2", "3"])
+    # 4. Time parameters (only for unsteady)
+    if is_unsteady:
+        print("\n4. Parámetros temporales")
+        dt = get_float("Paso de tiempo (Δt)", default=0.01, min_val=0.0001)
+        T_final = get_float("Tiempo final (T)", default=1.0, min_val=0.01)
+        n_steps = int(T_final / dt)
+        print(f"   → Número de pasos de tiempo: {n_steps}")
+        
+        save_freq = get_int("Guardar cada N pasos", default=10, min_val=1)
     
-    # 5. Solver parameters
-    if solver_type in ["1", "2"]:
+    # 5. Solver selection
+    if is_unsteady:
+        print_menu("5. Selecciona el esquema temporal:", {
+            "1": "Semi-implícito (rápido, requiere dt pequeño)",
+            "2": "Totalmente implícito con Picard (estable, dt grande)",
+            "3": "Totalmente implícito con Newton (convergencia rápida)"
+        })
+        solver_type = get_choice("Opción", ["1", "2", "3"])
+        
+        if solver_type in ["2", "3"]:
+            # Nonlinear iteration parameters for implicit methods
+            nl_tol = get_float("Tolerancia no lineal", default=1e-8, min_val=1e-15)
+            max_nl_iter = get_int("Máx. iteraciones no lineales por paso", default=20, min_val=1)
+        else:
+            nl_tol = None
+            max_nl_iter = None
+        
+        # Convection form (only for semi-implicit)
+        if solver_type == "1":
+            print_menu("Forma del término convectivo:", {
+                "1": "Standard: (u·∇)u",
+                "2": "Divergence: (u·∇)u + 0.5(∇·u)u",
+                "3": "Skew-symmetric: 0.5[(u·∇)u - (∇u)·u]"
+            })
+            conv_choice = get_choice("Opción", ["1", "2", "3"])
+            conv_forms = {"1": "standard", "2": "divergence", "3": "skew_symmetric"}
+            convection_form = conv_forms[conv_choice]
+        else:
+            convection_form = "standard"
+    else:
+        # Steady-state solver
+        print_menu("5. Selecciona el método de solución:", {
+            "1": "Picard (robusto, convergencia lineal)",
+            "2": "Newton (rápido, convergencia cuadrática)"
+        })
+        solver_type = get_choice("Opción", ["1", "2"])
+        
+        # Solver parameters
         tolerance = get_float("Tolerancia de convergencia", default=1e-8, min_val=1e-15)
         max_iter = get_int("Máximo de iteraciones", default=100 if solver_type == "1" else 50, min_val=1)
         
@@ -133,42 +181,51 @@ def setup_problem():
             convection_form = conv_forms[conv_choice]
         else:
             convection_form = None
-    else:
-        # Adaptive parameters
-        n_refinements = get_int("Número de ciclos de refinamiento", default=5, min_val=1)
-        theta = get_float("Parámetro de marcado θ (0-1)", default=0.7, min_val=0.01)
-        print_menu("Estrategia de marcado:", {
-            "1": "Maximum (simple, efectiva)",
-            "2": "Dörfler (teóricamente óptima)"
-        })
-        mark_choice = get_choice("Opción", ["1", "2"])
-        marking_strategy = "maximum" if mark_choice == "1" else "dorfler"
-        tolerance = 1e-8
-        max_iter = None
-        convection_form = None
+    
+    # 6. Visualization/Export options
+    print_menu("6. Opciones de visualización/exportación:", {
+        "1": "Solo visualizar (ventana NGSolve)",
+        "2": "Exportar para ParaView (.pvd)" + (" + visualizar" if not is_unsteady else ""),
+        "3": "Ambos" if is_unsteady else "Sin visualización"
+    })
+    viz_choice = get_choice("Opción", ["1", "2", "3"])
     
     # Summary
     print("\n" + "="*80)
     print("RESUMEN DE CONFIGURACIÓN")
     print("="*80)
+    print(f"  Tipo: {'Evolutivo (time-dependent)' if is_unsteady else 'Estacionario (steady-state)'}")
     print(f"  Dominio: {'Rectángulo' if domain_type == '1' else 'L-shaped'}")
     print(f"  Tamaño de malla: h = {h}")
     print(f"  Viscosidad: ν = {viscosity} (Re ≈ {reynolds:.0f})")
     
-    if solver_type == "1":
-        print(f"  Método: Picard")
-        print(f"  Convección: {convection_form}")
-        print(f"  Tolerancia: {tolerance:.2e}")
-        print(f"  Max iteraciones: {max_iter}")
-    elif solver_type == "2":
-        print(f"  Método: Newton")
-        print(f"  Tolerancia: {tolerance:.2e}")
-        print(f"  Max iteraciones: {max_iter}")
+    if is_unsteady:
+        print(f"  Paso de tiempo: Δt = {dt}")
+        print(f"  Tiempo final: T = {T_final}")
+        print(f"  Pasos de tiempo: {n_steps}")
+        print(f"  Guardar cada: {save_freq} pasos")
+        
+        if solver_type == "1":
+            print(f"  Esquema: Semi-implícito (IMEX)")
+            print(f"  Convección: {convection_form}")
+        elif solver_type == "2":
+            print(f"  Esquema: Totalmente implícito (Picard)")
+            print(f"  Tolerancia NL: {nl_tol:.2e}")
+            print(f"  Max iter NL: {max_nl_iter}")
+        else:
+            print(f"  Esquema: Totalmente implícito (Newton)")
+            print(f"  Tolerancia NL: {nl_tol:.2e}")
+            print(f"  Max iter NL: {max_nl_iter}")
     else:
-        print(f"  Método: Adaptativo")
-        print(f"  Ciclos de refinamiento: {n_refinements}")
-        print(f"  Parámetro θ: {theta}")
-        print(f"  Estrategia: {marking_strategy}")
+        if solver_type == "1":
+            print(f"  Método: Picard")
+            print(f"  Convección: {convection_form}")
+            print(f"  Tolerancia: {tolerance:.2e}")
+            print(f"  Max iteraciones: {max_iter}")
+        elif solver_type == "2":
+            print(f"  Método: Newton")
+            print(f"  Tolerancia: {tolerance:.2e}")
+            print(f"  Max iteraciones: {max_iter}")
     
     print("="*80)
     
@@ -179,24 +236,29 @@ def setup_problem():
     
     # Build configuration
     config = {
+        'is_unsteady': is_unsteady,
         'domain_type': domain_type,
         'h': h,
         'viscosity': viscosity,
         'solver_type': solver_type,
-        'tolerance': tolerance,
-        'max_iter': max_iter,
-        'convection_form': convection_form
+        'convection_form': convection_form,
+        'viz_choice': viz_choice
     }
     
-    if solver_type == "3":
-        config['n_refinements'] = n_refinements
-        config['theta'] = theta
-        config['marking_strategy'] = marking_strategy
+    if is_unsteady:
+        config['dt'] = dt
+        config['T_final'] = T_final
+        config['save_frequency'] = save_freq
+        if solver_type in ["2", "3"]:
+            config['nl_tolerance'] = nl_tol
+            config['max_nl_iter'] = max_nl_iter
+    else:
+        config['tolerance'] = tolerance
+        config['max_iter'] = max_iter
     
     return config
 
 
-####
 def solve_problem(config):
     """Solve the problem with given configuration."""
     print("\n" + "="*80)
@@ -208,8 +270,9 @@ def solve_problem(config):
             rectangle_mesh, L_mesh,
             taylor_hood,
             picard_iteration, newton_iteration,
-            #adaptive_solve,
-            #generate_convergence_plot
+            stokes_problem,
+            time_stepping_semiimplicit, time_stepping_implicit,
+            export_time_series
         )
         
         # Create mesh
@@ -225,86 +288,132 @@ def solve_problem(config):
         
         print(f"   ✓ Malla creada: {mesh.ne} elementos, {mesh.nv} vértices")
         
+        # Create FEM space
+        X = taylor_hood(mesh, dirichlet_boundaries)
+        print(f"   ✓ Espacio FEM: {X.ndof} DOFs")
+        
         # Boundary condition
         u_bc = CF((1, 0))
         
         # Solve
-        print("\n2. Resolviendo ecuaciones de Navier-Stokes...")
-        
-        if config['solver_type'] == "1":
-            # Picard
-            solution, info = picard_iteration(
-                mesh, taylor_hood(mesh, dirichlet_boundaries),
-                bc_label, u_bc,
-                viscosity=config['viscosity'],
-                convection_form=config['convection_form'],
-                tolerance=config['tolerance'],
-                max_iterations=config['max_iter'],
-                verbose=True
-            )
+        if config['is_unsteady']:
+            # UNSTEADY PROBLEM
+            print("\n2. Resolviendo problema evolutivo de Navier-Stokes...")
             
-        elif config['solver_type'] == "2":
-            # Newton
-            solution, info = newton_iteration(
-                mesh, taylor_hood(mesh, dirichlet_boundaries),
-                bc_label, u_bc,
-                viscosity=config['viscosity'],
-                tolerance=config['tolerance'],
-                max_iterations=config['max_iter'],
-                verbose=True
-            )
+            # Initial condition: Stokes solution
+            print("   Calculando condición inicial (Stokes)...")
+            stokes_sol = stokes_problem(mesh, X, bc_label, u_bc, config['viscosity'])
+            u0 = stokes_sol.components[0]
+            print("   ✓ Condición inicial lista")
+            
+            # Time stepping
+            if config['solver_type'] == "1":
+                # Semi-implicit
+                print(f"\n   Esquema semi-implícito: {int(config['T_final']/config['dt'])} pasos...")
+                solutions, times = time_stepping_semiimplicit(
+                    mesh=mesh,
+                    fespace=X,
+                    initial_velocity=u0,
+                    dirichlet_boundaries=bc_label,
+                    velocity_bc=u_bc,
+                    dt=config['dt'],
+                    T_final=config['T_final'],
+                    viscosity=config['viscosity'],
+                    convection_form=config['convection_form'],
+                    save_frequency=config['save_frequency'],
+                    verbose=True
+                )
+                info = {'method': 'semi-implicit', 'n_snapshots': len(solutions)}
+                
+            else:
+                # Fully implicit (Picard or Newton)
+                method = 'picard' if config['solver_type'] == "2" else 'newton'
+                print(f"\n   Esquema totalmente implícito ({method})...")
+                solutions, times = time_stepping_implicit(
+                    mesh=mesh,
+                    fespace=X,
+                    initial_velocity=u0,
+                    dirichlet_boundaries=bc_label,
+                    velocity_bc=u_bc,
+                    dt=config['dt'],
+                    T_final=config['T_final'],
+                    viscosity=config['viscosity'],
+                    method=method,
+                    tolerance=config['nl_tolerance'],
+                    max_nonlinear_iter=config['max_nl_iter'],
+                    save_frequency=config['save_frequency'],
+                    verbose=True
+                )
+                info = {'method': f'implicit-{method}', 'n_snapshots': len(solutions)}
+            
+            solution = solutions[-1]  # Final solution for visualization
             
         else:
-            # Adaptive
-            solution, info = adaptive_solve(
-                mesh, bc_label, u_bc,
-                viscosity=config['viscosity'],
-                n_refinements=config['n_refinements'],
-                theta=config['theta'],
-                marking_strategy=config['marking_strategy'],
-                tolerance=config['tolerance'],
-                verbose=True
-            )
+            # STEADY-STATE PROBLEM
+            print("\n2. Resolviendo ecuaciones de Navier-Stokes estacionarias...")
+            
+            if config['solver_type'] == "1":
+                # Picard
+                solution, info = picard_iteration(
+                    mesh, X,
+                    bc_label, u_bc,
+                    viscosity=config['viscosity'],
+                    convection_form=config['convection_form'],
+                    tolerance=config['tolerance'],
+                    max_iterations=config['max_iter'],
+                    verbose=True
+                )
+                
+            else:
+                # Newton
+                solution, info = newton_iteration(
+                    mesh, X,
+                    bc_label, u_bc,
+                    viscosity=config['viscosity'],
+                    tolerance=config['tolerance'],
+                    max_iterations=config['max_iter'],
+                    verbose=True
+                )
+            
+            solutions = None
+            times = None
         
         # Results
         print("\n" + "="*80)
         print("SOLUCIÓN ENCONTRADA")
         print("="*80)
         
-        if config['solver_type'] in ["1", "2"]:
+        if config['is_unsteady']:
+            print(f"  Snapshots guardados: {info['n_snapshots']}")
+            print(f"  Tiempo final: {times[-1]:.4f}")
+            print(f"  Método: {info['method']}")
+        else:
             print(f"  Convergió: {'✓ Sí' if info['converged'] else '✗ No'}")
             print(f"  Iteraciones: {info['iterations']}")
             print(f"  Error final: {info['final_error']:.6e}")
-        else:
-            print(f"  Elementos finales: {info['n_elements'][-1]}")
-            print(f"  DOFs finales: {info['n_dofs'][-1]}")
-            print(f"  Error final: {info['eta_global'][-1]:.6e}")
-            if info['convergence_rate_eta']:
-                avg_rate = sum(info['convergence_rate_eta']) / len(info['convergence_rate_eta'])
-                print(f"  Tasa de convergencia: {avg_rate:.2f}")
         
         print("="*80)
         
-        return solution, info, mesh
+        return solution, info, mesh, solutions, times
         
     except Exception as e:
         print(f"\n❌ Error durante la solución: {e}")
         import traceback
         traceback.print_exc()
-        return None, None, None
+        return None, None, None, None, None
 
 
-def visualize_results(solution, info, mesh, config):
+def visualize_results(solution, info, mesh, solutions, times, config):
     """Visualize and save results."""
     print("\n" + "="*80)
     print("VISUALIZACIÓN Y EXPORTACIÓN")
     print("="*80)
     
-    # Visualize
-    visualize = get_choice("\n¿Visualizar solución? (s/n)", ["s", "n", "y"])
+    viz_choice = config['viz_choice']
     
-    if visualize in ["s", "y"]:
-        print("\nAbriendo ventanas de visualización...")
+    # Visualize in NGSolve GUI
+    if viz_choice in ["1", "3"]:
+        print("\nAbriendo ventanas de visualización NGSolve...")
         velocity = solution.components[0]
         pressure = solution.components[1]
         
@@ -312,24 +421,57 @@ def visualize_results(solution, info, mesh, config):
         Draw(pressure, mesh, "Presión")
         print("  ✓ Ventanas abiertas (ciérralas para continuar)")
     
-    # Save results
-    if config['solver_type'] == "3":
-        save = get_choice("\n¿Guardar resultados? (s/n)", ["s", "n", "y"])
-        
-        if save in ["s", "y"]:
-            from mmfem import generate_convergence_plot, export_results_latex
-            
+    # Export to VTK/ParaView
+    if viz_choice in ["2", "3"]:
+        if config['is_unsteady']:
+            # Export time series
+            print("\nExportando serie temporal para ParaView...")
             try:
-                generate_convergence_plot(info, filename="convergence.png", show=False)
-                print("  ✓ Gráfico guardado: convergence.png")
+                from mmfem import export_time_series
                 
-                export_results_latex(info, filename="results.tex")
-                print("  ✓ Tabla LaTeX guardada: results.tex")
+                output_name = input("\nNombre del archivo (default: simulation): ").strip() or "simulation"
+                
+                pvd_file = export_time_series(
+                    mesh=mesh,
+                    solutions=solutions,
+                    times=times,
+                    field_names=["velocity", "pressure"],
+                    output_name=output_name,
+                    output_dir="vtk_output",
+                    subdivision=2,
+                    verbose=True
+                )
+                
+                print(f"\n  🎬 Para ver la animación:")
+                print(f"     paraview {pvd_file}")
+                
             except Exception as e:
-                print(f"  ❌ Error guardando resultados: {e}")
-
-
-###
+                print(f"  ❌ Error exportando: {e}")
+        else:
+            # Export single snapshot
+            print("\nExportando para ParaView...")
+            try:
+                from ngsolve import VTKOutput
+                
+                output_name = input("\nNombre del archivo (default: steady_solution): ").strip() or "steady_solution"
+                
+                velocity = solution.components[0]
+                pressure = solution.components[1]
+                
+                vtk = VTKOutput(
+                    ma=mesh,
+                    coefs=[velocity, pressure],
+                    names=["velocity", "pressure"],
+                    filename=output_name,
+                    subdivision=2
+                )
+                vtk.Do()
+                
+                print(f"  ✓ Archivo guardado: {output_name}.vtu")
+                print(f"  📊 Abrir con: paraview {output_name}.vtu")
+                
+            except Exception as e:
+                print(f"  ❌ Error exportando: {e}")
 
 
 def main():
@@ -354,10 +496,10 @@ def main():
                 input("\nPresiona Enter para volver al menú...")
                 continue
             
-            solution, info, mesh = solve_problem(config)
+            solution, info, mesh, solutions, times = solve_problem(config)
             
             if solution is not None:
-                visualize_results(solution, info, mesh, config)
+                visualize_results(solution, info, mesh, solutions, times, config)
             
             input("\nPresiona Enter para volver al menú...")
         
@@ -371,33 +513,68 @@ def main():
             print("""
 MMfem resuelve las ecuaciones de Navier-Stokes usando elementos finitos.
 
-CONCEPTOS BÁSICOS:
+TIPOS DE PROBLEMA:
 
-1. DOMINIO:
-   - Rectángulo: Problema clásico de lid-driven cavity
-   - L-shaped: Dominio con singularidad (para adaptatividad)
+1. ESTACIONARIO (Steady-state):
+   - Busca la solución en equilibrio (∂u/∂t = 0)
+   - Más rápido de resolver
+   - Bueno para entender el comportamiento final
 
-2. VISCOSIDAD (ν):
-   - Controla el número de Reynolds: Re = 1/ν
-   - Valores típicos: 0.01 (Re=100) a 0.001 (Re=1000)
-   - Mayor viscosidad → flujo más lento y estable
+2. EVOLUTIVO (Time-dependent):
+   - Simula la evolución temporal del flujo
+   - Muestra cómo el flujo evoluciona desde condición inicial
+   - Permite estudiar transitorios y dinámica
+   - Genera animaciones visualizables en ParaView
 
-3. MÉTODOS:
-   - Picard: Robusto, bueno para Re bajo/medio
-   - Newton: Rápido si hay buen punto inicial
-   - Adaptativo: Refina malla automáticamente
+ESQUEMAS TEMPORALES (solo evolutivo):
 
-4. PARÁMETROS ADAPTATIVOS:
-   - θ (theta): 0.5-0.8, controla cuántos elementos refinar
-   - Estrategia: Maximum (simple) o Dörfler (óptima)
+1. Semi-implícito (IMEX):
+   - Rápido (un sistema lineal por paso)
+   - Requiere Δt pequeño (condición CFL)
+   - Recomendado: Δt ~ h/|u|_max
+
+2. Totalmente implícito (Picard/Newton):
+   - Estable (sin condición CFL)
+   - Permite Δt más grande (5-10x)
+   - Requiere iteraciones no lineales
+
+PARÁMETROS CLAVE:
+
+- Viscosidad (ν): Controla Re = 1/ν
+  * 0.01 → Re = 100 (flujo laminar estable)
+  * 0.001 → Re = 1000 (transición)
+
+- Paso de tiempo (Δt, solo evolutivo):
+  * Semi-implícito: 0.001-0.02
+  * Totalmente implícito: 0.01-0.1
+
+- Tiempo final (T, solo evolutivo):
+  * 1.0-5.0 para ver desarrollo completo
+
+VISUALIZACIÓN:
+
+- NGSolve: Ventanas interactivas inmediatas
+- ParaView: Exporta .pvd para animaciones profesionales
+  → Abre con: paraview archivo.pvd
+  → Click "Apply", selecciona campo, Play ▶️
 
 RECOMENDACIONES:
-- Comenzar con viscosidad alta (0.01-0.1)
-- Usar malla gruesa inicialmente (h=0.1-0.2)
-- Probar Picard primero, luego Newton si necesario
-- Usar adaptativo para problemas con singularidades
 
-Para más información: docs/BEST_PRACTICES.md
+Problema estacionario:
+  ✓ Comenzar con Picard
+  ✓ Re < 200 para garantizar convergencia
+  ✓ Usar Newton si Picard es lento
+
+Problema evolutivo:
+  ✓ Comenzar con semi-implícito
+  ✓ Δt = 0.01, T = 1.0 como prueba
+  ✓ Usar implícito para Re alto o Δt grande
+  ✓ save_frequency = 5-10 para no saturar disco
+
+Para más información: 
+  - UNSTEADY_IMPLEMENTATION.md
+  - PARAVIEW_GUIDE.md
+  - VTK_SOLUTION.md
             """)
             input("\nPresiona Enter para continuar...")
         
@@ -409,22 +586,45 @@ Para más información: docs/BEST_PRACTICES.md
             print("ACERCA DE MMfem")
             print("="*80)
             print("""
-MMfem v0.1.0
+MMfem v0.2.0
 Librería Python para resolver ecuaciones de Navier-Stokes
 mediante el Método de Elementos Finitos.
 
 CARACTERÍSTICAS:
-✓ Espacios de elementos finitos: Taylor-Hood, MINI
-✓ Solucionadores: Picard, Newton
-✓ Refinamiento adaptativo de mallas
-✓ Documentación completa
-✓ Ejemplos y tests
+
+Problemas:
+  ✓ Estacionarios (steady-state)
+  ✓ Evolutivos (time-dependent) ← NUEVO!
+
+Espacios de elementos finitos:
+  ✓ Taylor-Hood (P2-P1)
+  ✓ MINI elements
+
+Solucionadores estacionarios:
+  ✓ Picard (robusto)
+  ✓ Newton (convergencia cuadrática)
+
+Solucionadores evolutivos:
+  ✓ Semi-implícito (IMEX)
+  ✓ Totalmente implícito (Picard/Newton)
+
+Exportación:
+  ✓ VTK para ParaView
+  ✓ Animaciones temporales (.pvd)
+  ✓ Gráficos de energía cinética
+
+Documentación:
+  ✓ Ejemplos completos
+  ✓ Tests unitarios
+  ✓ Guías de usuario
 
 AUTOR: Mauricio Mendiluce
 LICENCIA: MIT
-REPOSITORIO: https://github.com/maurimendiluce/MMfem
 
-Para documentación completa, ver README.md
+Para documentación completa, ver:
+  - README.md
+  - UNSTEADY_IMPLEMENTATION.md
+  - examples/
             """)
             input("\nPresiona Enter para continuar...")
         

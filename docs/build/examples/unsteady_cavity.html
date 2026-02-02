@@ -1,0 +1,333 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lid-driven cavity non stationary problem &mdash; MMfem 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Lid-driven cavity stationary problem" href="lid_driven_cavity.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MMfem
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/mesh.html">Mesh module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/spaces.html">Spaces module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/formulations.html">Formulations module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/solvers.html">Solvers module</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="lid_driven_cavity.html">Lid-driven cavity stationary problem</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Lid-driven cavity non stationary problem</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#problem-setup">Problem setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#python-implementation">Python implementation</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MMfem</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Lid-driven cavity non stationary problem</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/unsteady_cavity.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="lid-driven-cavity-non-stationary-problem">
+<h1>Lid-driven cavity non stationary problem<a class="headerlink" href="#lid-driven-cavity-non-stationary-problem" title="Link to this heading"></a></h1>
+<p>This example demonstrates the solution of the classical lid-driven cavity
+problem for the incompressible Navier–Stokes equations using <strong>MMfem</strong>.</p>
+<p>The cavity is the unit square Ω = (0,1)², with a moving lid on the top boundary.</p>
+<hr class="docutils" />
+<section id="problem-setup">
+<h2>Problem setup<a class="headerlink" href="#problem-setup" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Domain: unit square</p></li>
+<li><p>Boundary conditions:
+- Top: horizontal velocity (lid)
+- Other walls: no-slip</p></li>
+<li><p>Discretization: Taylor–Hood elements</p></li>
+<li><p>Solver: Picard / Newton iterations</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="python-implementation">
+<h2>Python implementation<a class="headerlink" href="#python-implementation" title="Link to this heading"></a></h2>
+<p>The complete Python script is shown below.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">  1</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="linenos">  2</span><span class="sd">Unsteady Lid-Driven Cavity Flow Example</span>
+<span class="linenos">  3</span>
+<span class="linenos">  4</span><span class="sd">This script demonstrates how to solve the time-dependent lid-driven cavity </span>
+<span class="linenos">  5</span><span class="sd">problem using MMfem. The flow starts from rest and evolves towards the </span>
+<span class="linenos">  6</span><span class="sd">steady-state solution.</span>
+<span class="linenos">  7</span>
+<span class="linenos">  8</span><span class="sd">Problem setup:</span>
+<span class="linenos">  9</span><span class="sd">    - Domain: [0,1] × [0,1]</span>
+<span class="linenos"> 10</span><span class="sd">    - Boundary conditions:</span>
+<span class="linenos"> 11</span><span class="sd">        * Top wall (y=1): u = (1, 0) (moving lid)</span>
+<span class="linenos"> 12</span><span class="sd">        * Other walls: u = (0, 0) (no-slip)</span>
+<span class="linenos"> 13</span><span class="sd">    - Initial condition: u = (0, 0) (flow at rest)</span>
+<span class="linenos"> 14</span><span class="sd">    - Reynolds number: Re = UL/ν = 100 (ν = 0.01)</span>
+<span class="linenos"> 15</span>
+<span class="linenos"> 16</span><span class="sd">This demonstrates the transient dynamics of the classic benchmark problem.</span>
+<span class="linenos"> 17</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="linenos"> 18</span><span class="kn">from</span><span class="w"> </span><span class="nn">ngsolve</span><span class="w"> </span><span class="kn">import</span> <span class="n">CF</span><span class="p">,</span> <span class="n">GridFunction</span><span class="p">,</span> <span class="n">VTKOutput</span>
+<span class="linenos"> 19</span><span class="kn">from</span><span class="w"> </span><span class="nn">mmfem</span><span class="w"> </span><span class="kn">import</span> <span class="n">rectangle_mesh</span><span class="p">,</span> <span class="n">taylor_hood</span>
+<span class="linenos"> 20</span><span class="kn">from</span><span class="w"> </span><span class="nn">mmfem.solvers</span><span class="w"> </span><span class="kn">import</span> <span class="n">time_stepping_semiimplicit</span><span class="p">,</span> <span class="n">time_stepping_implicit</span>
+<span class="linenos"> 21</span><span class="kn">from</span><span class="w"> </span><span class="nn">mmfem.formulations</span><span class="w"> </span><span class="kn">import</span> <span class="n">stokes_problem</span>
+<span class="linenos"> 22</span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="linenos"> 23</span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="linenos"> 24</span>
+<span class="linenos"> 25</span>
+<span class="linenos"> 26</span><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<span class="linenos"> 27</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the unsteady lid-driven cavity simulation.&quot;&quot;&quot;</span>
+<span class="linenos"> 28</span>    
+<span class="linenos"> 29</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="o">*</span><span class="mi">70</span><span class="p">)</span>
+<span class="linenos"> 30</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;UNSTEADY LID-DRIVEN CAVITY FLOW SIMULATION&quot;</span><span class="p">)</span>
+<span class="linenos"> 31</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="o">*</span><span class="mi">70</span><span class="p">)</span>
+<span class="linenos"> 32</span>    
+<span class="linenos"> 33</span>    <span class="c1"># Problem parameters</span>
+<span class="linenos"> 34</span>    <span class="n">viscosity</span> <span class="o">=</span> <span class="mf">0.01</span>   <span class="c1"># Kinematic viscosity (Re = 100)</span>
+<span class="linenos"> 35</span>    <span class="n">h</span> <span class="o">=</span> <span class="mf">0.05</span>           <span class="c1"># Mesh size</span>
+<span class="linenos"> 36</span>    <span class="n">dt</span> <span class="o">=</span> <span class="mf">0.01</span>          <span class="c1"># Time step</span>
+<span class="linenos"> 37</span>    <span class="n">T_final</span> <span class="o">=</span> <span class="mf">5.0</span>      <span class="c1"># Final time</span>
+<span class="linenos"> 38</span>    
+<span class="linenos"> 39</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Problem Parameters:&quot;</span><span class="p">)</span>
+<span class="linenos"> 40</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Viscosity (ν): </span><span class="si">{</span><span class="n">viscosity</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos"> 41</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Reynolds number: </span><span class="si">{</span><span class="mf">1.0</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">viscosity</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos"> 42</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Mesh size: </span><span class="si">{</span><span class="n">h</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos"> 43</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Time step (Δt): </span><span class="si">{</span><span class="n">dt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos"> 44</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Final time: </span><span class="si">{</span><span class="n">T_final</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos"> 45</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Number of time steps: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">T_final</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">dt</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos"> 46</span>    
+<span class="linenos"> 47</span>    <span class="c1"># Step 1: Create mesh</span>
+<span class="linenos"> 48</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span><span class="o">*</span><span class="mi">70</span><span class="p">)</span>
+<span class="linenos"> 49</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 1: Generating mesh...&quot;</span><span class="p">)</span>
+<span class="linenos"> 50</span>    <span class="n">mesh</span> <span class="o">=</span> <span class="n">rectangle_mesh</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="n">h</span><span class="p">)</span>
+<span class="linenos"> 51</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Number of elements: </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">ne</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos"> 52</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Number of vertices: </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">nv</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos"> 53</span>    
+<span class="linenos"> 54</span>    <span class="c1"># Step 2: Define finite element space</span>
+<span class="linenos"> 55</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span><span class="o">*</span><span class="mi">70</span><span class="p">)</span>
+<span class="linenos"> 56</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 2: Setting up finite element space...&quot;</span><span class="p">)</span>
+<span class="linenos"> 57</span>    <span class="n">X</span> <span class="o">=</span> <span class="n">taylor_hood</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="s2">&quot;left|right|bottom|top&quot;</span><span class="p">)</span>
+<span class="linenos"> 58</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Total DOFs: </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">ndof</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos"> 59</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Velocity DOFs: </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ndof</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos"> 60</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Pressure DOFs: </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">ndof</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos"> 61</span>    
+<span class="linenos"> 62</span>    <span class="c1"># Step 3: Define boundary conditions</span>
+<span class="linenos"> 63</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span><span class="o">*</span><span class="mi">70</span><span class="p">)</span>
+<span class="linenos"> 64</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 3: Defining boundary conditions...&quot;</span><span class="p">)</span>
+<span class="linenos"> 65</span>    <span class="n">u_bc</span> <span class="o">=</span> <span class="n">CF</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>  <span class="c1"># Moving lid</span>
+<span class="linenos"> 66</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Dirichlet BC on &#39;top&#39;: u = (1, 0)&quot;</span><span class="p">)</span>
+<span class="linenos"> 67</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  No-slip BC on other walls: u = (0, 0)&quot;</span><span class="p">)</span>
+<span class="linenos"> 68</span>    
+<span class="linenos"> 69</span>    <span class="c1"># Step 4: Set initial condition</span>
+<span class="linenos"> 70</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span><span class="o">*</span><span class="mi">70</span><span class="p">)</span>
+<span class="linenos"> 71</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 4: Setting initial condition...&quot;</span><span class="p">)</span>
+<span class="linenos"> 72</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  Computing Stokes solution as initial condition...&quot;</span><span class="p">)</span>
+<span class="linenos"> 73</span>    
+<span class="linenos"> 74</span>    <span class="c1"># Use Stokes solution as initial condition</span>
+<span class="linenos"> 75</span>    <span class="n">stokes_sol</span> <span class="o">=</span> <span class="n">stokes_problem</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="s2">&quot;top&quot;</span><span class="p">,</span> <span class="n">u_bc</span><span class="p">,</span> <span class="n">viscosity</span><span class="p">)</span>
+<span class="linenos"> 76</span>    <span class="n">u0</span> <span class="o">=</span> <span class="n">stokes_sol</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="linenos"> 77</span>    
+<span class="linenos"> 78</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Initial condition ready&quot;</span><span class="p">)</span>
+<span class="linenos"> 79</span>    
+<span class="linenos"> 80</span>    <span class="c1"># Step 5: Time stepping</span>
+<span class="linenos"> 81</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span><span class="o">*</span><span class="mi">70</span><span class="p">)</span>
+<span class="linenos"> 82</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 5: Time stepping simulation...&quot;</span><span class="p">)</span>
+<span class="linenos"> 83</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Choose time stepping method:&quot;</span><span class="p">)</span>
+<span class="linenos"> 84</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  1. Semi-implicit (fast, requires small time step)&quot;</span><span class="p">)</span>
+<span class="linenos"> 85</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  2. Fully implicit (stable, allows larger time step)&quot;</span><span class="p">)</span>
+<span class="linenos"> 86</span>    
+<span class="linenos"> 87</span>    <span class="n">choice</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Enter choice (1 or 2, default=1): &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">&quot;1&quot;</span>
+<span class="linenos"> 88</span>    
+<span class="linenos"> 89</span>    <span class="c1"># Storage for kinetic energy</span>
+<span class="linenos"> 90</span>    <span class="n">kinetic_energies</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="linenos"> 91</span>    
+<span class="linenos"> 92</span>    <span class="k">def</span><span class="w"> </span><span class="nf">save_energy</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">timestep</span><span class="p">,</span> <span class="n">solution</span><span class="p">):</span>
+<span class="linenos"> 93</span><span class="w">        </span><span class="sd">&quot;&quot;&quot;Callback to compute and save kinetic energy.&quot;&quot;&quot;</span>
+<span class="linenos"> 94</span>        <span class="kn">from</span><span class="w"> </span><span class="nn">ngsolve</span><span class="w"> </span><span class="kn">import</span> <span class="n">Integrate</span><span class="p">,</span> <span class="n">InnerProduct</span>
+<span class="linenos"> 95</span>        <span class="n">velocity</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="linenos"> 96</span>        <span class="n">KE</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">Integrate</span><span class="p">(</span><span class="n">InnerProduct</span><span class="p">(</span><span class="n">velocity</span><span class="p">,</span> <span class="n">velocity</span><span class="p">),</span> <span class="n">mesh</span><span class="p">)</span>
+<span class="linenos"> 97</span>        <span class="n">kinetic_energies</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">time</span><span class="p">,</span> <span class="n">KE</span><span class="p">))</span>
+<span class="linenos"> 98</span>    
+<span class="linenos"> 99</span>    <span class="k">if</span> <span class="n">choice</span> <span class="o">==</span> <span class="s2">&quot;1&quot;</span><span class="p">:</span>
+<span class="linenos">100</span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Running semi-implicit time stepping...&quot;</span><span class="p">)</span>
+<span class="linenos">101</span>        <span class="n">solutions</span><span class="p">,</span> <span class="n">times</span> <span class="o">=</span> <span class="n">time_stepping_semiimplicit</span><span class="p">(</span>
+<span class="linenos">102</span>            <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span>
+<span class="linenos">103</span>            <span class="n">fespace</span><span class="o">=</span><span class="n">X</span><span class="p">,</span>
+<span class="linenos">104</span>            <span class="n">initial_velocity</span><span class="o">=</span><span class="n">u0</span><span class="p">,</span>
+<span class="linenos">105</span>            <span class="n">dirichlet_boundaries</span><span class="o">=</span><span class="s2">&quot;top&quot;</span><span class="p">,</span>
+<span class="linenos">106</span>            <span class="n">velocity_bc</span><span class="o">=</span><span class="n">u_bc</span><span class="p">,</span>
+<span class="linenos">107</span>            <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span>
+<span class="linenos">108</span>            <span class="n">T_final</span><span class="o">=</span><span class="n">T_final</span><span class="p">,</span>
+<span class="linenos">109</span>            <span class="n">viscosity</span><span class="o">=</span><span class="n">viscosity</span><span class="p">,</span>
+<span class="linenos">110</span>            <span class="n">convection_form</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">,</span>
+<span class="linenos">111</span>            <span class="n">save_frequency</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>  <span class="c1"># Save every 10 steps</span>
+<span class="linenos">112</span>            <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="linenos">113</span>            <span class="n">callback</span><span class="o">=</span><span class="n">save_energy</span>
+<span class="linenos">114</span>        <span class="p">)</span>
+<span class="linenos">115</span>    <span class="k">else</span><span class="p">:</span>
+<span class="linenos">116</span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Running fully implicit time stepping...&quot;</span><span class="p">)</span>
+<span class="linenos">117</span>        <span class="n">solutions</span><span class="p">,</span> <span class="n">times</span> <span class="o">=</span> <span class="n">time_stepping_implicit</span><span class="p">(</span>
+<span class="linenos">118</span>            <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span>
+<span class="linenos">119</span>            <span class="n">fespace</span><span class="o">=</span><span class="n">X</span><span class="p">,</span>
+<span class="linenos">120</span>            <span class="n">initial_velocity</span><span class="o">=</span><span class="n">u0</span><span class="p">,</span>
+<span class="linenos">121</span>            <span class="n">dirichlet_boundaries</span><span class="o">=</span><span class="s2">&quot;top&quot;</span><span class="p">,</span>
+<span class="linenos">122</span>            <span class="n">velocity_bc</span><span class="o">=</span><span class="n">u_bc</span><span class="p">,</span>
+<span class="linenos">123</span>            <span class="n">dt</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>  <span class="c1"># Can use larger time step</span>
+<span class="linenos">124</span>            <span class="n">T_final</span><span class="o">=</span><span class="n">T_final</span><span class="p">,</span>
+<span class="linenos">125</span>            <span class="n">viscosity</span><span class="o">=</span><span class="n">viscosity</span><span class="p">,</span>
+<span class="linenos">126</span>            <span class="n">method</span><span class="o">=</span><span class="s1">&#39;picard&#39;</span><span class="p">,</span>
+<span class="linenos">127</span>            <span class="n">tolerance</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span>
+<span class="linenos">128</span>            <span class="n">max_nonlinear_iter</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<span class="linenos">129</span>            <span class="n">save_frequency</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>  <span class="c1"># Save every 5 steps</span>
+<span class="linenos">130</span>            <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="linenos">131</span>            <span class="n">callback</span><span class="o">=</span><span class="n">save_energy</span>
+<span class="linenos">132</span>        <span class="p">)</span>
+<span class="linenos">133</span>    
+<span class="linenos">134</span>    <span class="c1"># Step 6: Post-processing</span>
+<span class="linenos">135</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span><span class="o">*</span><span class="mi">70</span><span class="p">)</span>
+<span class="linenos">136</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step 6: Post-processing and visualization...&quot;</span><span class="p">)</span>
+<span class="linenos">137</span>    
+<span class="linenos">138</span>    <span class="c1"># Plot kinetic energy evolution</span>
+<span class="linenos">139</span>    <span class="k">if</span> <span class="n">kinetic_energies</span><span class="p">:</span>
+<span class="linenos">140</span>        <span class="n">ke_times</span><span class="p">,</span> <span class="n">ke_values</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">kinetic_energies</span><span class="p">)</span>
+<span class="linenos">141</span>        
+<span class="linenos">142</span>        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="linenos">143</span>        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ke_times</span><span class="p">,</span> <span class="n">ke_values</span><span class="p">,</span> <span class="s1">&#39;b-&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="linenos">144</span>        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="linenos">145</span>        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Kinetic Energy&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="linenos">146</span>        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Evolution of Kinetic Energy&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+<span class="linenos">147</span>        <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="linenos">148</span>        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="linenos">149</span>        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;kinetic_energy.png&#39;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">)</span>
+<span class="linenos">150</span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  Kinetic energy plot saved to &#39;kinetic_energy.png&#39;&quot;</span><span class="p">)</span>
+<span class="linenos">151</span>    
+<span class="linenos">152</span>    <span class="c1"># Export to VTK for visualization in ParaView</span>
+<span class="linenos">153</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Exporting solutions to VTK format...&quot;</span><span class="p">)</span>
+<span class="linenos">154</span>    <span class="n">vtk</span> <span class="o">=</span> <span class="n">VTKOutput</span><span class="p">(</span>
+<span class="linenos">155</span>        <span class="n">ma</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span>
+<span class="linenos">156</span>        <span class="n">coefs</span><span class="o">=</span><span class="p">[</span><span class="n">solutions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">solutions</span><span class="p">))],</span>
+<span class="linenos">157</span>        <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;velocity&quot;</span><span class="p">],</span>
+<span class="linenos">158</span>        <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;unsteady_cavity&quot;</span><span class="p">,</span>
+<span class="linenos">159</span>        <span class="n">subdivision</span><span class="o">=</span><span class="mi">2</span>
+<span class="linenos">160</span>    <span class="p">)</span>
+<span class="linenos">161</span>    <span class="n">vtk</span><span class="o">.</span><span class="n">Do</span><span class="p">()</span>
+<span class="linenos">162</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  VTK files saved to &#39;unsteady_cavity.vtu&#39;&quot;</span><span class="p">)</span>
+<span class="linenos">163</span>    
+<span class="linenos">164</span>    <span class="c1"># Compute and display statistics at different times</span>
+<span class="linenos">165</span>    <span class="kn">from</span><span class="w"> </span><span class="nn">ngsolve</span><span class="w"> </span><span class="kn">import</span> <span class="n">Integrate</span><span class="p">,</span> <span class="n">sqrt</span><span class="p">,</span> <span class="n">InnerProduct</span>
+<span class="linenos">166</span>    
+<span class="linenos">167</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Velocity statistics at selected times:&quot;</span><span class="p">)</span>
+<span class="linenos">168</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="s1">&#39;Time&#39;</span><span class="si">:</span><span class="s2">&gt;8s</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="s1">&#39;Max |u|&#39;</span><span class="si">:</span><span class="s2">&gt;10s</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="s1">&#39;Avg |u|&#39;</span><span class="si">:</span><span class="s2">&gt;10s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">169</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  &quot;</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span><span class="o">*</span><span class="mi">35</span><span class="p">)</span>
+<span class="linenos">170</span>    
+<span class="linenos">171</span>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">sol</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">solutions</span><span class="p">)):</span>
+<span class="linenos">172</span>        <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="o">//</span><span class="mi">5</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Show ~5 snapshots</span>
+<span class="linenos">173</span>            <span class="n">velocity</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="linenos">174</span>            <span class="n">velocity_magnitude</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">InnerProduct</span><span class="p">(</span><span class="n">velocity</span><span class="p">,</span> <span class="n">velocity</span><span class="p">))</span>
+<span class="linenos">175</span>            
+<span class="linenos">176</span>            <span class="c1"># Note: max velocity computation needs evaluation at points</span>
+<span class="linenos">177</span>            <span class="n">avg_velocity</span> <span class="o">=</span> <span class="n">Integrate</span><span class="p">(</span><span class="n">velocity_magnitude</span><span class="p">,</span> <span class="n">mesh</span><span class="p">)</span> <span class="o">/</span> <span class="n">Integrate</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">mesh</span><span class="p">)</span>
+<span class="linenos">178</span>            
+<span class="linenos">179</span>            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="s2">8.4f</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="s1">&#39;--&#39;</span><span class="si">:</span><span class="s2">&gt;10s</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">avg_velocity</span><span class="si">:</span><span class="s2">10.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">180</span>    
+<span class="linenos">181</span>    <span class="c1"># Final summary</span>
+<span class="linenos">182</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span><span class="o">*</span><span class="mi">70</span><span class="p">)</span>
+<span class="linenos">183</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SIMULATION COMPLETE&quot;</span><span class="p">)</span>
+<span class="linenos">184</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="o">*</span><span class="mi">70</span><span class="p">)</span>
+<span class="linenos">185</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Computed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">solutions</span><span class="p">)</span><span class="si">}</span><span class="s2"> time snapshots&quot;</span><span class="p">)</span>
+<span class="linenos">186</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Final time reached: </span><span class="si">{</span><span class="n">times</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">187</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Solutions exported to VTK format&quot;</span><span class="p">)</span>
+<span class="linenos">188</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ View results in ParaView: paraview unsteady_cavity.vtu&quot;</span><span class="p">)</span>
+<span class="linenos">189</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="o">*</span><span class="mi">70</span><span class="p">)</span>
+<span class="linenos">190</span>
+<span class="linenos">191</span>
+<span class="linenos">192</span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="linenos">193</span>    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="lid_driven_cavity.html" class="btn btn-neutral float-left" title="Lid-driven cavity stationary problem" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Mauricio Mendiluce.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

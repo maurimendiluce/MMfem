@@ -1,5 +1,5 @@
-Lid-driven cavity problem
-=========================
+Lid-driven cavity stationary problem 
+====================================
 
 This example demonstrates the solution of the classical lid-driven cavity
 problem for the incompressible Navier–Stokes equations using **MMfem**.
@@ -28,3 +28,5 @@ The complete Python script is shown below.
 .. literalinclude:: ../../../examples/lid_driven_cavity.py
    :language: python
    :linenos:
+
+
