@@ -16,7 +16,7 @@ from ngsolve import (
     Mesh, FESpace, GridFunction, CF, Integrate, sqrt, InnerProduct, Grad, VTKOutput
 )
 
-from .formulations import stokes_problem, picard_step, newton_step, ConvectionType
+from .formulations import stokes_problem,stokesp1p1_problem, picard_step, newton_step, newton_step_p1p1, ConvectionType
 
 
 def compute_velocity_error(
@@ -351,6 +351,131 @@ def newton_iteration(
     while iteration < max_iterations:
         # Newton step
         solution = newton_step(
+            mesh, fespace, velocity_old,
+            dirichlet_boundaries, velocity_bc,
+            viscosity
+        )
+        
+        velocity_new = solution.components[0]
+
+        # Compute error
+        error = compute_velocity_error(velocity_new, velocity_old, mesh)
+        errors.append(error)
+
+        if verbose:
+            print(f"Iteration {iteration:3d} | Error: {error:.6e} | Tolerance: {tolerance:.2e}")
+
+        # Callback
+        if callback is not None:
+            callback(iteration, solution, error)
+
+        # Check convergence
+        if error < tolerance:
+            info = {
+                'converged': True,
+                'iterations': iteration,
+                'errors': errors,
+                'final_error': error
+            }
+            if verbose:
+                print("-" * 70)
+                print(f"✓ Converged in {iteration} iterations")
+                print("=" * 70)
+            return solution, info
+
+        # Update
+        velocity_old = velocity_new
+        iteration += 1
+
+    # Max iterations reached
+    info = {
+        'converged': False,
+        'iterations': max_iterations,
+        'errors': errors,
+        'final_error': errors[-1] if errors else float('inf')
+    }
+    
+    if verbose:
+        print("-" * 70)
+        print(f"✗ Did not converge in {max_iterations} iterations")
+        print(f"Final error: {errors[-1]:.6e}")
+        print("=" * 70)
+    
+    raise RuntimeError(
+        f"Newton iteration did not converge in {max_iterations} iterations. "
+        f"Final error: {errors[-1]:.6e}"
+    )
+
+def newton_iteration_p1p1(
+    mesh: Mesh,
+    fespace: FESpace,
+    dirichlet_boundaries: str,
+    velocity_bc: CF,
+    viscosity: float = 1.0,
+    tolerance: float = 1e-10,
+    max_iterations: int = 50,
+    verbose: bool = True,
+    use_stokes_initial: bool = True,
+    callback: Optional[Callable] = None
+) -> Tuple[GridFunction, dict]:
+    """
+    Docstring for newton_iteration
+    
+    :param mesh: Description
+    :type mesh: Mesh
+    :param fespace: Description
+    :type fespace: FESpace
+    :param dirichlet_boundaries: Description
+    :type dirichlet_boundaries: str
+    :param velocity_bc: Description
+    :type velocity_bc: CF
+    :param viscosity: Description
+    :type viscosity: float
+    :param tolerance: Description
+    :type tolerance: float
+    :param max_iterations: Description
+    :type max_iterations: int
+    :param verbose: Description
+    :type verbose: bool
+    :param use_stokes_initial: Description
+    :type use_stokes_initial: bool
+    :param callback: Description
+    :type callback: Optional[Callable]
+    :return: Description
+    :rtype: Tuple[Any, dict]
+    """
+    if verbose:
+        print("=" * 70)
+        print("Newton Iteration for Navier-Stokes Equations")
+        print("=" * 70)
+        print(f"Viscosity (ν): {viscosity}")
+        print(f"Tolerance: {tolerance:.2e}")
+        print(f"Max iterations: {max_iterations}")
+        print("-" * 70)
+
+    # Initial guess
+    if use_stokes_initial:
+        if verbose:
+            print("Solving initial Stokes problem...")
+        initial_solution = stokesp1p1_problem(
+            mesh, fespace, dirichlet_boundaries, velocity_bc, viscosity
+        )
+    else:
+        initial_solution = GridFunction(fespace)
+        initial_solution.components[0].Set(
+            velocity_bc,
+            definedon=mesh.Boundaries(dirichlet_boundaries)
+        )
+    
+    velocity_old = initial_solution.components[0]
+
+    # Newton iteration
+    errors = []
+    iteration = 0
+
+    while iteration < max_iterations:
+        # Newton step
+        solution = newton_step_p1p1(
             mesh, fespace, velocity_old,
             dirichlet_boundaries, velocity_bc,
             viscosity

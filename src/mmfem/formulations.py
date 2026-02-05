@@ -14,7 +14,7 @@ Functions:
 from typing import Callable, Literal
 from ngsolve import (
     Mesh, FESpace, GridFunction, BilinearForm, LinearForm, CF,
-    grad, div, InnerProduct, dx, Grad
+    grad, div, InnerProduct, dx, Grad,SymbolicBFI, Integrate,L2
 )
 
 
@@ -95,6 +95,69 @@ def stokes_problem(
     a += viscosity * InnerProduct(grad(u), grad(v)) * dx  # Viscous term
     a += -div(u) * q * dx                                   # Continuity (∇·u = 0)
     a += -div(v) * p * dx                                   # Pressure gradient
+    a += -lam * q * dx                                      # Mean value constraint
+    a += -mu * p * dx                                       # Mean value constraint
+    a.Assemble()
+
+    # Linear form: L(v,q,μ) = 0 (no body forces)
+    f = LinearForm(fespace)
+    f.Assemble()
+
+    # Solution vector
+    solution = GridFunction(fespace)
+
+    # Apply Dirichlet boundary conditions
+    solution.components[0].Set(
+        velocity_bc,
+        definedon=mesh.Boundaries(dirichlet_boundaries)
+    )
+
+    # Solve the linear system
+    residual = f.vec.CreateVector()
+    residual.data = f.vec - a.mat * solution.vec
+    
+    inverse = a.mat.Inverse(freedofs=fespace.FreeDofs())
+    solution.vec.data += inverse * residual
+
+    return solution
+
+def stokesp1p1_problem(
+    mesh: Mesh,
+    fespace: FESpace,
+    dirichlet_boundaries: str,
+    velocity_bc: CF,
+    viscosity: float = 1.0
+) -> GridFunction:
+    """
+    Docstring for stokes_problem
+    
+    :param mesh: Description
+    :type mesh: Mesh
+    :param fespace: Description
+    :type fespace: FESpace
+    :param dirichlet_boundaries: Description
+    :type dirichlet_boundaries: str
+    :param velocity_bc: Description
+    :type velocity_bc: CF
+    :param viscosity: Description
+    :type viscosity: float
+    :return: Description
+    :rtype: Any
+    """
+    # Extract test and trial functions
+    (u, p, lam), (v, q, mu) = fespace.TnT()
+
+    fes_P0 = L2(mesh, order=0)
+    Π = GridFunction(fes_P0)
+    #Π_p = Integrate(p, mesh) / Integrate(1, mesh)
+    #Π_q = Integrate(q, mesh) / Integrate(1, mesh)
+
+    # Bilinear form: a(u,p,λ; v,q,μ)
+    a = BilinearForm(fespace)
+    a += viscosity * InnerProduct(grad(u), grad(v)) * dx  # Viscous term
+    a += -div(u) * q * dx                                   # Continuity (∇·u = 0)
+    a += -div(v) * p * dx                                   # Pressure gradient
+    a += - (p-Π) * (q-Π) * dx                             
     a += -lam * q * dx                                      # Mean value constraint
     a += -mu * p * dx                                       # Mean value constraint
     a.Assemble()
@@ -333,6 +396,86 @@ def newton_step(
         InnerProduct(Grad(velocity_prev) * velocity_prev, v) * dx
     )
     
+    a += convection
+    a.Assemble()
+
+    # Linear form
+    f = LinearForm(fespace)
+    f.Assemble()
+
+    # Solution
+    solution = GridFunction(fespace)
+    solution.components[0].Set(
+        velocity_bc,
+        definedon=mesh.Boundaries(dirichlet_boundaries)
+    )
+
+    # Solve
+    residual = f.vec.CreateVector()
+    residual.data = f.vec - a.mat * solution.vec
+    inverse = a.mat.Inverse(freedofs=fespace.FreeDofs())
+    solution.vec.data += inverse * residual
+
+    return solution
+
+def newton_step_p1p1(
+    mesh: Mesh,
+    fespace: FESpace,
+    velocity_prev: GridFunction,
+    dirichlet_boundaries: str,
+    velocity_bc: CF,
+    viscosity: float = 1.0
+) -> GridFunction:
+    """
+    Docstring for newton_step
+    
+    :param mesh: Description
+    :type mesh: Mesh
+    :param fespace: Description
+    :type fespace: FESpace
+    :param velocity_prev: Description
+    :type velocity_prev: GridFunction
+    :param dirichlet_boundaries: Description
+    :type dirichlet_boundaries: str
+    :param velocity_bc: Description
+    :type velocity_bc: CF
+    :param viscosity: Description
+    :type viscosity: float
+    :return: Description
+    :rtype: Any
+    """
+    # Extract test and trial functions
+    (u, p, lam), (v, q, mu) = fespace.TnT()
+
+    #Π_p = Integrate(p, mesh) / Integrate(1, mesh)
+    #Π_q = Integrate(q, mesh) / Integrate(1, mesh)
+    fes_P0 = L2(mesh, order=0)
+    Π = GridFunction(fes_P0)
+
+    # Bilinear form (Jacobian)
+    a = BilinearForm(fespace)
+
+    # Stokes part
+    a += viscosity * InnerProduct(Grad(u), Grad(v)) * dx
+    a += -div(u) * q * dx
+    a += -div(v) * p * dx
+    a += - (p-Π) * (q-Π) * dx                   
+    a += -lam * q * dx
+    a += -mu * p * dx
+
+    # Linearized convection term (derivative of (u·∇)u)
+    # ∂/∂u [(u·∇)u] · δu = (u_old·∇)δu + (δu·∇)u_old
+    #convection = (
+    #    InnerProduct(Grad(u) * velocity_prev, v) * dx +
+    #    InnerProduct(Grad(velocity_prev) * u, v) * dx -
+    #    InnerProduct(Grad(velocity_prev) * velocity_prev, v) * dx
+    #)
+    convection = (
+        0.5*(InnerProduct(Grad(u)*velocity_prev,v)*dx-InnerProduct(Grad(u)*v,velocity_prev)*dx) +
+        0.5*(InnerProduct(Grad(velocity_prev)*u,v)*dx-InnerProduct(Grad(velocity_prev)*v,u)*dx) -
+        0.5*(InnerProduct(Grad(velocity_prev)*velocity_prev,v)*dx-InnerProduct(Grad(velocity_prev)*v,velocity_prev)*dx)
+    )
+
     a += convection
     a.Assemble()
 

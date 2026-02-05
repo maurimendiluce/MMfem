@@ -15,7 +15,7 @@ This is a standard benchmark in computational fluid dynamics.
 """
 from netgen import gui
 from ngsolve import CF, Draw
-from mmfem import rectangle_mesh, taylor_hood, picard_iteration
+from mmfem import rectangle_mesh, taylor_hood,stabilization_p1p1, picard_iteration,newton_iteration_p1p1
 import matplotlib.pyplot as plt
 
 
@@ -27,7 +27,7 @@ def main():
     print("="*70)
     
     # Problem parameters
-    viscosity = 0.01  # Kinematic viscosity (Re = 100)
+    viscosity = 0.1  # Kinematic viscosity (Re = 100)
     h = 0.02          # Mesh size
     tolerance = 1e-8  # Convergence tolerance
     
@@ -47,7 +47,8 @@ def main():
     # Step 2: Define finite element space
     print("\n" + "-"*70)
     print("Step 2: Setting up finite element space...")
-    X = taylor_hood(mesh, "left|right|bottom|top")
+    #X = taylor_hood(mesh, "left|right|bottom|top")
+    X = stabilization_p1p1(mesh, "left|right|bottom|top")
     print(f"  Total DOFs: {X.ndof}")
     print(f"  Velocity DOFs: {X.components[0].ndof}")
     print(f"  Pressure DOFs: {X.components[1].ndof}")
@@ -64,13 +65,12 @@ def main():
     print("\n" + "-"*70)
     print("Step 4: Solving Navier-Stokes equations...")
     
-    solution, info = picard_iteration(
+    solution, info = newton_iteration_p1p1(
         mesh=mesh,
         fespace=X,
         dirichlet_boundaries="top",
         velocity_bc=u_bc,
         viscosity=viscosity,
-        convection_form="standard",
         tolerance=tolerance,
         max_iterations=100,
         verbose=True

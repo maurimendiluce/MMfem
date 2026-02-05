@@ -35,14 +35,14 @@ __email__ = "mmendiluce@dm.uba.ar"
 
 # Import main components for easier access
 from .mesh import rectangle_mesh, L_mesh, get_boundary_labels, get_dirichlet_boundaries
-from .spaces import taylor_hood, mini_elements, get_space_info
+from .spaces import taylor_hood, mini_elements,stabilization_p1p1, get_space_info
 from .formulations import (
-    stokes_problem, picard_step, newton_step,
+    stokes_problem, picard_step, newton_step,newton_step_p1p1,
     unsteady_stokes_step, unsteady_navier_stokes_semiimplicit_step,
     unsteady_navier_stokes_implicit_step
 )
 from .solvers import (
-    picard_iteration, newton_iteration, compute_velocity_error,
+    picard_iteration, newton_iteration, compute_velocity_error,newton_iteration_p1p1,
     time_stepping_semiimplicit, time_stepping_implicit
 )
 from .vtk_utils import export_time_series, export_single_timestep, export_comparison
@@ -57,12 +57,15 @@ __all__ = [
     # FEM spaces
     "taylor_hood",
     "mini_elements",
+    "stabilization_p1p1",
     "get_space_info",
     
     # Steady-state problem formulations
     "stokes_problem",
+    "stokesp1p1_problem"
     "picard_step",
     "newton_step",
+    "newton_step_p1p1",
     
     # Unsteady problem formulations
     "unsteady_stokes_step",
@@ -72,6 +75,7 @@ __all__ = [
     # Steady-state solvers
     "picard_iteration",
     "newton_iteration",
+    "newton_iteration_p1p1",
     
     # Unsteady solvers
     "time_stepping_semiimplicit",

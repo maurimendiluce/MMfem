@@ -149,6 +149,30 @@ def mini_elements(
     return FESpace([V, Q, N])
 
 
+def stabilization_p1p1(mesh: Mesh,
+    dirichlet_boundaries: str
+) -> FESpace:
+    """
+    Docstring for stabilization_p1p1
+    
+    :param mesh: Description
+    :type mesh: Mesh
+    :param dirichlet_boundaries: Description
+    :type dirichlet_boundaries: str
+    :return: Description
+    :rtype: Any
+    """
+    # Velocity space (vector-valued H1)
+    V = VectorH1(mesh, order=1, dirichlet=dirichlet_boundaries)
+    
+    # Pressure space (scalar H1, one order lower)
+    Q = H1(mesh, order=1)
+    
+    # NumberSpace for pressure mean value constraint
+    N = NumberSpace(mesh)
+    
+    return FESpace([V, Q, N])
+
 # Optional: Function to get space information
 def get_space_info(fespace: FESpace) -> dict:
     """
