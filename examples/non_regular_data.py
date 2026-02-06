@@ -71,7 +71,7 @@ def run(h_max):
         meshes.append(mesh)
         X_taylor2 = taylor_hood(mesh, "left|right|bottom|top")
         X_mini = mini_elements(mesh, "left|right|bottom|top")
-        #X_p1p1 = stabilization_p1p1(mesh, "left|right|bottom|top")
+        X_p1p1 = stabilization_p1p1(mesh, "left|right|bottom|top")
         #u_bc = CF((1,0))
         f = IfPos(x - (-1),IfPos(x - (-1+h_max[j]),IfPos(x - (1-h_max[j]), (1-x)/h_max[j], 1),(x+1)/h_max[j]), 0)
         u_bc = CF((f,0))
@@ -80,7 +80,7 @@ def run(h_max):
         print("="*70)
         print("Solving with Taylor Hood P2P1..")
         print(f"  Velocity DOFs: {X_taylor2.components[0].ndof}")
-        solution_taylor2, info = picard_iteration(
+        solution_taylor2, info = newton_iteration(
             mesh=mesh,
             fespace=X_taylor2,
             dirichlet_boundaries="top",
@@ -97,7 +97,7 @@ def run(h_max):
 
         print("Solving with Mini-Elements..")
         print(f"  Velocity DOFs: {X_mini.components[0].ndof}")
-        solution_mini, info = picard_iteration(
+        solution_mini, info = newton_iteration(
             mesh=mesh,
             fespace=X_mini,
             dirichlet_boundaries="top",
@@ -112,23 +112,23 @@ def run(h_max):
         print(f"error: {info['final_error']}")
         solutions_Mini.append(solution_mini.components[0])
 
-        #print("Solving with p1p1..")
-        #solution_p1p1, info = newton_iteration_p1p1(
-        #    mesh=mesh,
-        #    fespace=X_p1p1,
-        #    dirichlet_boundaries="top",
-        #    velocity_bc=u_bc,
-        #    viscosity=viscosity,
-        #    tolerance=tolerance,
-        #    max_iterations=100,
-        #    verbose=False
-        #    )
-        #print(f"Converged: {info['converged']}")
-        #print(f"Iterations: {info['iterations']}")
-        #print(f"error: {info['final_error']}")
-        #solutions_p1p1.append(solution_p1p1.components[0])
+        print("Solving with p1p1..")
+        solution_p1p1, info = newton_iteration_p1p1(
+            mesh=mesh,
+            fespace=X_p1p1,
+            dirichlet_boundaries="top",
+            velocity_bc=u_bc,
+            viscosity=viscosity,
+            tolerance=tolerance,
+            max_iterations=100,
+            verbose=False
+            )
+        print(f"Converged: {info['converged']}")
+        print(f"Iterations: {info['iterations']}")
+        print(f"error: {info['final_error']}")
+        solutions_p1p1.append(solution_p1p1.components[0])
 
-    return meshes,solutions_Mini,solutions_Taylor2#,solutions_p1p1
+    return meshes,solutions_Mini,solutions_Taylor2,solutions_p1p1
 
 
 def main():
@@ -138,20 +138,20 @@ def main():
     print("LID-DRIVEN CAVITY EXAMPLE REGULARIZATION")
     print("="*70)
     
-    h_max = [1/4,1/8,1/16,1/32,1/64]
+    h_max = [1/4,1/8,1/16,1/32,1/64,1/128]
     errorL4_Taylor2 = []
     errorL4_Mini = []
-    #errorL4_p1p1 = []
+    errorL4_p1p1 = []
 
-    #meshes,solutions_Mini,solutions_Taylor2,solutions_p1p1 = run(h_max= h_max)
-    meshes,solutions_Mini,solutions_Taylor2 = run(h_max= h_max)
+    meshes,solutions_Mini,solutions_Taylor2,solutions_p1p1 = run(h_max= h_max)
+    #meshes,solutions_Mini,solutions_Taylor2 = run(h_max= h_max)
     for j in range(len(meshes)-1):
         errorL4_Taylor2.append(sqrt(sqrt(Integrate(InnerProduct(solutions_Taylor2[j+1]-solutions_Taylor2[j],solutions_Taylor2[j+1]-solutions_Taylor2[j])**2,meshes[j+1]))))
         errorL4_Mini.append(sqrt(sqrt(Integrate(InnerProduct(solutions_Mini[j+1]-solutions_Mini[j],solutions_Mini[j+1]-solutions_Mini[j])**2,meshes[j+1]))))
-        #errorL4_p1p1.append(sqrt(sqrt(Integrate(InnerProduct(solutions_p1p1[j+1]-solutions_p1p1[j],solutions_p1p1[j+1]-solutions_p1p1[j])**2,meshes[j+1]))))
+        errorL4_p1p1.append(sqrt(sqrt(Integrate(InnerProduct(solutions_p1p1[j+1]-solutions_p1p1[j],solutions_p1p1[j+1]-solutions_p1p1[j])**2,meshes[j+1]))))
     
 
-    h = np.array(h_max[1:])
+    h = np.array(h_max[:-1])
     #err_taylor2 = np.array(errorL4_Taylor2)
     #err_mini = np.array(errorL4_Mini)
     #err_p1p1 = np.array(errorL4_p1p1)
@@ -160,11 +160,11 @@ def main():
     #print table
     print_convergence_table(h, errorL4_Taylor2, "Taylor-Hood")
     print_convergence_table(h, errorL4_Mini, "Mini-Elements")
-    #print_convergence_table(h, errorL4_p1p1,"P1P1 Stabilization")
+    print_convergence_table(h, errorL4_p1p1,"P1P1 Stabilization")
 
-    save_convergence_table(h, errorL4_Taylor2, "taylor-hood_01.txt", title="")
-    save_convergence_table(h, errorL4_Mini, "mini-elements_01.txt", title="")
-    #save_convergence_table(h, errorL4_p1p1, "p1p1_01.txt", title="")
+    save_convergence_table(h, errorL4_Taylor2, "taylor-hood.txt", title="")
+    save_convergence_table(h, errorL4_Mini, "mini-elements.txt", title="")
+    save_convergence_table(h, errorL4_p1p1, "p1p1.txt", title="")
     
     #grafico de las g_h
     #plt.figure(2)
