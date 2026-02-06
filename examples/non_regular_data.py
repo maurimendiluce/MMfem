@@ -138,7 +138,7 @@ def main():
     print("LID-DRIVEN CAVITY EXAMPLE REGULARIZATION")
     print("="*70)
     
-    h_max = [1/4,1/8,1/16,1/32,1/64,1/128]
+    h_max = [1/4,1/8,1/16,1/32,1/64,1/128,1/256]
     errorL4_Taylor2 = []
     errorL4_Mini = []
     errorL4_p1p1 = []
