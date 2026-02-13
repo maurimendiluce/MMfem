@@ -51,6 +51,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Solvers module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.solvers.compute_velocity_error"><code class="docutils literal notranslate"><span class="pre">compute_velocity_error()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.solvers.newton_iteration"><code class="docutils literal notranslate"><span class="pre">newton_iteration()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mmfem.solvers.newton_iteration_p1p1"><code class="docutils literal notranslate"><span class="pre">newton_iteration_p1p1()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.solvers.picard_iteration"><code class="docutils literal notranslate"><span class="pre">picard_iteration()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.solvers.time_stepping_implicit"><code class="docutils literal notranslate"><span class="pre">time_stepping_implicit()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.solvers.time_stepping_semiimplicit"><code class="docutils literal notranslate"><span class="pre">time_stepping_semiimplicit()</span></code></a></li>
@@ -181,6 +182,34 @@ If False, uses zero initial guess.</p></li>
 1. Use Stokes solution as initial guess (default)
 2. For high Reynolds numbers, first converge with Picard
 3. Consider continuation methods for difficult problems</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mmfem.solvers.newton_iteration_p1p1">
+<span class="sig-prename descclassname"><span class="pre">mmfem.solvers.</span></span><span class="sig-name descname"><span class="pre">newton_iteration_p1p1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirichlet_boundaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_bc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viscosity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_stokes_initial</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mmfem/solvers.html#newton_iteration_p1p1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mmfem.solvers.newton_iteration_p1p1" title="Link to this definition"></a></dt>
+<dd><p>Docstring for newton_iteration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<em>Mesh</em>) – Description</p></li>
+<li><p><strong>fespace</strong> (<em>FESpace</em>) – Description</p></li>
+<li><p><strong>dirichlet_boundaries</strong> (<em>str</em>) – Description</p></li>
+<li><p><strong>velocity_bc</strong> (<em>CF</em>) – Description</p></li>
+<li><p><strong>viscosity</strong> (<em>float</em>) – Description</p></li>
+<li><p><strong>tolerance</strong> (<em>float</em>) – Description</p></li>
+<li><p><strong>max_iterations</strong> (<em>int</em>) – Description</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – Description</p></li>
+<li><p><strong>use_stokes_initial</strong> (<em>bool</em>) – Description</p></li>
+<li><p><strong>callback</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>]</em>) – Description</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Description</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[Any, dict]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">

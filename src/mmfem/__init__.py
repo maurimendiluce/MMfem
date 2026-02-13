@@ -34,7 +34,7 @@ __author__ = "Mauricio Mendiluce"
 __email__ = "mmendiluce@dm.uba.ar"
 
 # Import main components for easier access
-from .mesh import rectangle_mesh, L_mesh, get_boundary_labels, get_dirichlet_boundaries
+from .mesh import rectangle_mesh, L_mesh,boundary_string, get_boundary_labels, get_dirichlet_boundaries
 from .spaces import taylor_hood, mini_elements,stabilization_p1p1, get_space_info
 from .formulations import (
     stokes_problem, picard_step, newton_step,newton_step_p1p1,
@@ -45,6 +45,11 @@ from .solvers import (
     picard_iteration, newton_iteration, compute_velocity_error,newton_iteration_p1p1,
     time_stepping_semiimplicit, time_stepping_implicit
 )
+
+from .adaptative import (
+    estimate_error, mark_elements, adaptive_solve, compute_convergence_rates, generate_convergence_plot,
+    export_results_latex
+)
 from .vtk_utils import export_time_series, export_single_timestep, export_comparison
 
 __all__ = [
@@ -52,6 +57,7 @@ __all__ = [
     "rectangle_mesh",
     "L_mesh",
     "get_boundary_labels",
+    "boundary_string",
     "get_dirichlet_boundaries",
     
     # FEM spaces
@@ -77,6 +83,14 @@ __all__ = [
     "newton_iteration",
     "newton_iteration_p1p1",
     
+    #adaptative
+    "estimate_error",
+    "mark_elements",
+    "adaptive_solve",
+    "compute_convergence_rates",
+    "generate_convergence_plot",
+    "export_results_latex",
+
     # Unsteady solvers
     "time_stepping_semiimplicit",
     "time_stepping_implicit",

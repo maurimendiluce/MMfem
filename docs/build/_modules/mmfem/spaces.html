@@ -5,14 +5,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mmfem.spaces &mdash; MMfem 0.1 documentation</title>
+  <title>mmfem.spaces &mdash; MMfem 0.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -43,6 +43,12 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../api/mesh.html">Mesh module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api/spaces.html">Spaces module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/formulations.html">Formulations module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/solvers.html">Solvers module</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/lid_driven_cavity.html">Lid-driven cavity stationary problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/unsteady_cavity.html">Lid-driven cavity non stationary problem</a></li>
 </ul>
 
         </div>
@@ -225,6 +231,33 @@
     
     <span class="k">return</span> <span class="n">FESpace</span><span class="p">([</span><span class="n">V</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">N</span><span class="p">])</span></div>
 
+
+
+<div class="viewcode-block" id="stabilization_p1p1">
+<a class="viewcode-back" href="../../api/spaces.html#mmfem.spaces.stabilization_p1p1">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">stabilization_p1p1</span><span class="p">(</span><span class="n">mesh</span><span class="p">:</span> <span class="n">Mesh</span><span class="p">,</span>
+    <span class="n">dirichlet_boundaries</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FESpace</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Docstring for stabilization_p1p1</span>
+<span class="sd">    </span>
+<span class="sd">    :param mesh: Description</span>
+<span class="sd">    :type mesh: Mesh</span>
+<span class="sd">    :param dirichlet_boundaries: Description</span>
+<span class="sd">    :type dirichlet_boundaries: str</span>
+<span class="sd">    :return: Description</span>
+<span class="sd">    :rtype: Any</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Velocity space (vector-valued H1)</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">VectorH1</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dirichlet</span><span class="o">=</span><span class="n">dirichlet_boundaries</span><span class="p">)</span>
+    
+    <span class="c1"># Pressure space (scalar H1, one order lower)</span>
+    <span class="n">Q</span> <span class="o">=</span> <span class="n">H1</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    
+    <span class="c1"># NumberSpace for pressure mean value constraint</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">NumberSpace</span><span class="p">(</span><span class="n">mesh</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">FESpace</span><span class="p">([</span><span class="n">V</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">N</span><span class="p">])</span></div>
 
 
 <span class="c1"># Optional: Function to get space information</span>

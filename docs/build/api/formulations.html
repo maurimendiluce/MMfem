@@ -49,8 +49,10 @@
 <li class="toctree-l1"><a class="reference internal" href="spaces.html">Spaces module</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Formulations module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.formulations.newton_step"><code class="docutils literal notranslate"><span class="pre">newton_step()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mmfem.formulations.newton_step_p1p1"><code class="docutils literal notranslate"><span class="pre">newton_step_p1p1()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.formulations.picard_step"><code class="docutils literal notranslate"><span class="pre">picard_step()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.formulations.stokes_problem"><code class="docutils literal notranslate"><span class="pre">stokes_problem()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mmfem.formulations.stokesp1p1_problem"><code class="docutils literal notranslate"><span class="pre">stokesp1p1_problem()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.formulations.unsteady_navier_stokes_implicit_step"><code class="docutils literal notranslate"><span class="pre">unsteady_navier_stokes_implicit_step()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.formulations.unsteady_navier_stokes_semiimplicit_step"><code class="docutils literal notranslate"><span class="pre">unsteady_navier_stokes_semiimplicit_step()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#mmfem.formulations.unsteady_stokes_step"><code class="docutils literal notranslate"><span class="pre">unsteady_stokes_step()</span></code></a></li>
@@ -147,6 +149,30 @@ solving for the update math:<cite>delta u</cite>:</p>
 </pre></div>
 </div>
 <p>which results from differentiating :math`(ucdot nabla)u`.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mmfem.formulations.newton_step_p1p1">
+<span class="sig-prename descclassname"><span class="pre">mmfem.formulations.</span></span><span class="sig-name descname"><span class="pre">newton_step_p1p1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_prev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirichlet_boundaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_bc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viscosity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mmfem/formulations.html#newton_step_p1p1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mmfem.formulations.newton_step_p1p1" title="Link to this definition"></a></dt>
+<dd><p>Docstring for newton_step</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<em>Mesh</em>) – Description</p></li>
+<li><p><strong>fespace</strong> (<em>FESpace</em>) – Description</p></li>
+<li><p><strong>velocity_prev</strong> (<em>GridFunction</em>) – Description</p></li>
+<li><p><strong>dirichlet_boundaries</strong> (<em>str</em>) – Description</p></li>
+<li><p><strong>velocity_bc</strong> (<em>CF</em>) – Description</p></li>
+<li><p><strong>viscosity</strong> (<em>float</em>) – Description</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Description</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -250,6 +276,29 @@ such that</p>
 <p>The Lagrange multiplier enforces the constraint</p>
 <div class="math notranslate nohighlight">
 \[\int_\Omega p \, dx = 0\]</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mmfem.formulations.stokesp1p1_problem">
+<span class="sig-prename descclassname"><span class="pre">mmfem.formulations.</span></span><span class="sig-name descname"><span class="pre">stokesp1p1_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirichlet_boundaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocity_bc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viscosity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mmfem/formulations.html#stokesp1p1_problem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mmfem.formulations.stokesp1p1_problem" title="Link to this definition"></a></dt>
+<dd><p>Docstring for stokes_problem</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<em>Mesh</em>) – Description</p></li>
+<li><p><strong>fespace</strong> (<em>FESpace</em>) – Description</p></li>
+<li><p><strong>dirichlet_boundaries</strong> (<em>str</em>) – Description</p></li>
+<li><p><strong>velocity_bc</strong> (<em>CF</em>) – Description</p></li>
+<li><p><strong>viscosity</strong> (<em>float</em>) – Description</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Description</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
