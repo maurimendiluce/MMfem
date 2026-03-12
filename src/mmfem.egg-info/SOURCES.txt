@@ -7,7 +7,8 @@ src/MMfem.egg-info/dependency_links.txt
 src/MMfem.egg-info/requires.txt
 src/MMfem.egg-info/top_level.txt
 src/mmfem/__init__.py
-src/mmfem/adaptative.py
+src/mmfem/adaptative_old.py
+src/mmfem/adaptive.py
 src/mmfem/formulations.py
 src/mmfem/mesh.py
 src/mmfem/solvers.py

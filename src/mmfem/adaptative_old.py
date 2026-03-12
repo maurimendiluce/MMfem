@@ -18,15 +18,192 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ngsolve import (
     Mesh, FESpace, GridFunction, H1, specialcf, grad, dx, Integrate,
-    sqrt, InnerProduct, Trace, BND, Draw
+    sqrt, InnerProduct, Trace, BND, Draw, CF
 )
 
 from .spaces import taylor_hood
-from .solvers import newton_iteration
+from .solvers import newton_iteration,picard_iteration
 
 
 DomainType = Literal["convex","non-convex"]
 
+def solve_estime_mark(
+    mesh: Mesh,
+    dirichlet_labels: str,
+    dirichlet_boundaries: str,
+    uD: CF,
+    strategy: Literal["maximum", "average"] = "maximum",
+    theta: float = 0.7,
+    domain_type: DomainType = "convex"
+) -> [GridFunction,int,int,np.ndarray,float]: # type: ignore
+    """
+    Docstring for solve_estime_mark
+    
+    :param mesh: Description
+    :type mesh: Mesh
+    :param dirichlet_labels: Description
+    :type dirichlet_labels: str
+    :param dirichlet_boundaries: Description
+    :type dirichlet_boundaries: str
+    :param strategy: Description
+    :type strategy: Literal["maximum", "average"]
+    :param theta: Description
+    :type theta: float
+    :param domain_type: Description
+    :type domain_type: DomainType
+    :return: Description
+    :rtype: Any
+    """
+
+    h = specialcf.mesh_size
+    n = specialcf.normal(mesh.dim)
+    X = taylor_hood(mesh,dirichlet_labels)
+    solution, solve_info = newton_iteration(mesh,X,dirichlet_boundaries,uD,verbose=False)
+    uh = solution.components[0]
+    ph = solution.components[1]
+
+    ph_x = grad(ph)[0]
+    ph_y = grad(ph)[1]
+    V1 = H1(mesh,order=2,autoupdate=True)
+    uh_0 = GridFunction(V1)
+    uh_1 = GridFunction(V1)
+    uh_0.Set(uh[0])
+    uh_1.Set(uh[1])
+    laplacian_0 = Trace(uh_0.Operator("hesse"))
+    laplacian_1 = Trace(uh_1.Operator("hesse"))
+    convect_0 = uh_0*grad(uh_0)[0]+uh_1*grad(uh_0)[1]
+    convect_1 = uh_0*grad(uh_1)[0]+uh_1*grad(uh_1)[1]
+
+    uh_0_x = grad(uh_0)[0]
+    uh_1_y = grad(uh_1)[1]
+
+    residual = ((laplacian_0-ph_x-convect_0)**4+(laplacian_1-ph_y-convect_1)**4)*dx
+    div = (uh_0_x+uh_1_y)**4*dx
+    jump = ( (grad(uh_0)-grad(uh_0).Other())*n )**4 *dx(element_vb=BND)+(h**5)*( (grad(uh_1)-grad(uh_1).Other())*n )**4 *dx(element_vb=BND)
+
+    if domain_type == "convex":
+        alpha, beta, gamma = 8, 4, 5
+    elif domain_type == "non-convex":
+        alpha, beta, gamma = 20/3, 0, 11/3
+    else:
+        raise ValueError(f"Invalid domain_type '{domain_type}'")
+    
+    eta_residual = (h**alpha) * residual
+
+    if beta > 0:
+        eta_div = (h**beta) * div
+    else:
+        eta_div = div
+    
+    eta_jump = (h**gamma) * jump
+
+    eta_total = eta_residual + eta_div + eta_jump
+    eta_local = Integrate(eta_total, mesh, element_wise=True)
+    eta_global = sqrt(sqrt(sum(eta_local)))
+
+    ne = mesh.ne #num de triangulos
+    nv = mesh.nv #num de vertices
+    if strategy == "maximum":
+        eta_max = max(eta_local)
+
+        for el in mesh.Elements():
+            mesh.SetRefinementFlag(el, eta_local[el.nr] > theta*eta_max)
+    
+    elif strategy =="average":
+        eta_avg = (1/ne)*sum(eta_local)
+        for el in mesh.Elements():
+            mesh.SetRefinementFlag(el, eta_local[el.nr] > theta*eta_avg)
+    
+    return solution,nv,ne,eta_local,eta_global
+
+def adaptive_method(
+    mesh: Mesh,
+    dirichlet_boundaries: str,
+    dirichlet_labels: str,
+    uD: CF,
+    viscosity: float = 1.0,
+    n_refinements: int = 5,
+    theta: float = 0.7,
+    marking_strategy: Literal["maximum", "average"] = "maximum",
+    domain_type: DomainType = "convex",
+    tolerance: float = 1e-8,
+    verbose: bool = True
+) -> Tuple[GridFunction, Dict]:
+    """
+    Solve Navier-Stokes with adaptive mesh refinement.
+
+    Parameters
+    ----------
+    mesh : Mesh
+        Initial coarse mesh
+    dirichlet_boundaries : str
+        Boundary labels for Dirichlet conditions
+    velocity_bc : CF
+        Velocity boundary condition
+    viscosity : float, optional
+        Kinematic viscosity (default: 1.0)
+    n_refinements : int, optional
+        Number of refinement cycles (default: 5)
+    theta : float, optional
+        Marking parameter (default: 0.7)
+    marking_strategy : {'maximum', 'dorfler'}, optional
+        Marking strategy (default: 'maximum')
+    domain_type : {'general', 'convex'}, optional
+        Domain type (default: 'general')
+    tolerance : float, optional
+        Solver tolerance (default: 1e-8)
+    verbose : bool, optional
+        Print progress (default: True)
+
+    Returns
+    -------
+    solution : GridFunction
+        Final solution
+    history : dict
+        Refinement history
+
+    Examples
+    --------
+    >>> solution, history = adaptive_solve(mesh, "left|right|floor", u_bc)
+    """
+    if verbose:
+        print("="*80)
+        print("ADAPTIVE MESH REFINEMENT FOR NAVIER-STOKES")
+        print("="*80)
+        print(f"Initial mesh: {mesh.ne} elements, {mesh.nv} vertices")
+        print(f"Viscosity: {viscosity}")
+        print(f"Refinement cycles: {n_refinements}")
+        print("-"*80)
+    
+    history = {
+        'n_vertices': [],
+        'n_elements': [],
+        'n_dofs': [],
+        'eta_global': [],
+        'error_l4': [],
+    }
+    
+    
+    for cycle in range(n_refinements):
+        if verbose:
+            print(f"\nCycle {cycle + 1}/{n_refinements}")
+            print("-"*80)
+        
+        solution,nv,ne,eta_local,eta_global = solve_estime_mark(mesh,dirichlet_labels,dirichlet_boundaries,uD,strategy=marking_strategy,theta=theta,domain_type=DomainType)
+        uh_old = solution.components[0]
+        mesh.Refine()
+        X = taylor_hood(mesh,dirichlet_boundaries)
+        solution = picard_iteration(mesh,X,dirichlet_boundaries,uD,verbose=False)
+        uh,ph = solution.components[0],solution.components[1]
+        error_L4 = sqrt(sqrt(Integrate(InnerProduct(uh-uh_old,uh-uh_old)**2,mesh)))
+
+        history['error_L4'].append(error_L4)
+        history['n_vertices'].append(mesh.nv)
+        history['n_elements'].append(mesh.ne)
+        history['n_dofs'].append(X.ndof)
+        history['eta_global'].append(eta_global)
+
+    return uh,history
 
 def estimate_error(
     velocity: GridFunction,
@@ -182,7 +359,7 @@ def adaptive_solve(
     mesh: Mesh,
     dirichlet_boundaries: str,
     dirichlet_labels: str,
-    velocity_bc,
+    uD: GridFunction,
     viscosity: float = 1.0,
     n_refinements: int = 5,
     theta: float = 0.7,

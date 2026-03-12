@@ -29,7 +29,7 @@ Version:
     0.2.0
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __author__ = "Mauricio Mendiluce"
 __email__ = "mmendiluce@dm.uba.ar"
 
@@ -46,9 +46,8 @@ from .solvers import (
     time_stepping_semiimplicit, time_stepping_implicit
 )
 
-from .adaptative import (
-    estimate_error, mark_elements, adaptive_solve, compute_convergence_rates, generate_convergence_plot,
-    export_results_latex
+from .adaptive import (
+    solve_estime_mark,adaptive_method
 )
 from .vtk_utils import export_time_series, export_single_timestep, export_comparison
 
@@ -84,12 +83,8 @@ __all__ = [
     "newton_iteration_p1p1",
     
     #adaptative
-    "estimate_error",
-    "mark_elements",
-    "adaptive_solve",
-    "compute_convergence_rates",
-    "generate_convergence_plot",
-    "export_results_latex",
+    "solve_estime_mark",
+    "adaptive_method"
 
     # Unsteady solvers
     "time_stepping_semiimplicit",
