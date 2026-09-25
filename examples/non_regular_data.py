@@ -72,13 +72,6 @@ def sigma_np(x):
     return np.where(x < -0.5, 1.0,
            np.where(x < 0.5, 6*t**5 - 15*t**4 + 10*t**3, 0.0))
 
-def l2_error_geps(eps):
-    f = lambda x: (sigma_np(x)*np.exp(-(1+x)/eps)
-                   + sigma_np(-x)*np.exp(-(1-x)/eps))**2
-    pts = [-1+eps, -1+10*eps, 1-10*eps, 1-eps]
-    I, _ = quad(f, -1, 1, points=pts, limit=200)
-    return np.sqrt(I)
-
 def run(h_max):
 
     tolerance = 1e-8
@@ -88,9 +81,7 @@ def run(h_max):
     solutions_Mini = []
     solutions_p1p1 = []
 
-    eps = 1e-3
-    #error_g = l2_error_geps(eps)
-
+    eps = 1e-4
     for j in range(len(h_max)):           
         mesh = rectangle_mesh(-1, 1, -1, 1, h=h_max[j])
         #V_bc = VectorH1(mesh, order=2)          # o el orden que uses para la velocidad
@@ -100,12 +91,14 @@ def run(h_max):
         X_mini = mini_elements(mesh, "left|right|bottom|top")
         X_p1p1 = stabilization_p1p1(mesh, "left|right|bottom|top")
     
-        #g_eps = 1.0 - sigma(x) * exp(-(1+x)/eps) - sigma(-x) * exp(-(1-x)/eps)
-        #gf_bc.Set(CF((g_eps, 0)), definedon=mesh.Boundaries("top"))
-        #u_bc = gf_bc
+        #opcion 1
+        g_eps = 1.0 - sigma(x) * exp(-(1+x)/eps) - sigma(-x) * exp(-(1-x)/eps)
+        u_bc = CF((g_eps,0))
+        
+        #opcion 2
+        #g_eps = IfPos(x - (-1),IfPos(x - (-1+eps),IfPos(x - (1-eps), (1-x)/eps, 1),(x+1)/eps), 0)
         #u_bc = CF((g_eps,0))
-        f = IfPos(x - (-1),IfPos(x - (-1+eps),IfPos(x - (1-eps), (1-x)/eps, 1),(x+1)/eps), 0)
-        u_bc = CF((f,0))
+        
         print("="*70)
         print(f"Solving example with h = {h_max[j]}")
         print("="*70)
@@ -169,7 +162,7 @@ def main():
     print("LID-DRIVEN CAVITY EXAMPLE REGULARIZATION")
     print("="*70)
 
-    h_max = [1/4,1/8,1/16,1/32,1/64]
+    h_max = [1/4,1/8,1/16,1/32,1/64,1/128]
     errorL4_Taylor2 = []
     errorL4_Mini = []
     errorL4_p1p1 = []
