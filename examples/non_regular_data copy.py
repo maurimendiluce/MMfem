@@ -5,7 +5,6 @@ Docstring for examples.non_regular_data
 from ngsolve import VectorH1,GridFunction,CF, Draw, x, y, sqrt,exp, Integrate,InnerProduct,IfPos,VTKOutput
 from mmfem import rectangle_mesh, taylor_hood, mini_elements, picard_iteration,newton_iteration,stabilization_p1p1,newton_iteration_p1p1
 import matplotlib.pyplot as plt
-from scipy.integrate import quad
 import numpy as np
 
 
@@ -66,18 +65,9 @@ def sigma(x):
                  IfPos(t,                   # -1/2 <= x < 1/2
                        6*t**5 - 15*t**4 + 10*t**3,
                        0.0))                # x >= 1/2
-
-def sigma_np(x):
-    t = 0.5 - x
-    return np.where(x < -0.5, 1.0,
-           np.where(x < 0.5, 6*t**5 - 15*t**4 + 10*t**3, 0.0))
-
-def l2_error_geps(eps):
-    f = lambda x: (sigma_np(x)*np.exp(-(1+x)/eps)
-                   + sigma_np(-x)*np.exp(-(1-x)/eps))**2
-    pts = [-1+eps, -1+10*eps, 1-10*eps, 1-eps]
-    I, _ = quad(f, -1, 1, points=pts, limit=200)
-    return np.sqrt(I)
+#def g_eps(x, eps=1e-3):
+#    """Condición de borde regularizada en el lado y=1 (ec. 44)."""
+#    return 1.0 - sigma(x) * exp(-(1+x)/eps) - sigma(-x) * exp(-(1-x)/eps)
 
 def run(h_max):
 
@@ -88,24 +78,22 @@ def run(h_max):
     solutions_Mini = []
     solutions_p1p1 = []
 
-    eps = 1e-3
-    #error_g = l2_error_geps(eps)
-
     for j in range(len(h_max)):           
         mesh = rectangle_mesh(-1, 1, -1, 1, h=h_max[j])
-        #V_bc = VectorH1(mesh, order=2)          # o el orden que uses para la velocidad
-        #gf_bc = GridFunction(V_bc)
+        V_bc = VectorH1(mesh, order=2)          # o el orden que uses para la velocidad
+        gf_bc = GridFunction(V_bc)
         meshes.append(mesh)
         X_taylor2 = taylor_hood(mesh, "left|right|bottom|top")
         X_mini = mini_elements(mesh, "left|right|bottom|top")
         X_p1p1 = stabilization_p1p1(mesh, "left|right|bottom|top")
-    
-        #g_eps = 1.0 - sigma(x) * exp(-(1+x)/eps) - sigma(-x) * exp(-(1-x)/eps)
-        #gf_bc.Set(CF((g_eps, 0)), definedon=mesh.Boundaries("top"))
-        #u_bc = gf_bc
+        #u_bc = CF((1,0))
+        #f = IfPos(x - (-1),IfPos(x - (-1+h_max[j]),IfPos(x - (1-h_max[j]), (1-x)/h_max[j], 1),(x+1)/h_max[j]), 0)
+        #u_bc = CF((f,0))
+        eps = 1e-3
+        g_eps = 1.0 - sigma(x) * exp(-(1+x)/eps) - sigma(-x) * exp(-(1-x)/eps)
+        gf_bc.Set(CF((g_eps, 0)), definedon=mesh.Boundaries("top"))
+        u_bc = gf_bc
         #u_bc = CF((g_eps,0))
-        f = IfPos(x - (-1),IfPos(x - (-1+eps),IfPos(x - (1-eps), (1-x)/eps, 1),(x+1)/eps), 0)
-        u_bc = CF((f,0))
         print("="*70)
         print(f"Solving example with h = {h_max[j]}")
         print("="*70)
@@ -168,22 +156,26 @@ def main():
     print("="*70)
     print("LID-DRIVEN CAVITY EXAMPLE REGULARIZATION")
     print("="*70)
-
+    
     h_max = [1/4,1/8,1/16,1/32,1/64]
     errorL4_Taylor2 = []
     errorL4_Mini = []
     errorL4_p1p1 = []
-    errors_g = []
 
     meshes,solutions_Mini,solutions_Taylor2,solutions_p1p1 = run(h_max= h_max)
-
+    #meshes,solutions_Mini,solutions_Taylor2 = run(h_max= h_max)
     for j in range(len(meshes)-1):
         errorL4_Taylor2.append(sqrt(sqrt(Integrate(InnerProduct(solutions_Taylor2[j+1]-solutions_Taylor2[j],solutions_Taylor2[j+1]-solutions_Taylor2[j])**2,meshes[j+1]))))
         errorL4_Mini.append(sqrt(sqrt(Integrate(InnerProduct(solutions_Mini[j+1]-solutions_Mini[j],solutions_Mini[j+1]-solutions_Mini[j])**2,meshes[j+1]))))
         errorL4_p1p1.append(sqrt(sqrt(Integrate(InnerProduct(solutions_p1p1[j+1]-solutions_p1p1[j],solutions_p1p1[j+1]-solutions_p1p1[j])**2,meshes[j+1]))))
+    
 
     h = np.array(h_max[:-1])
-
+    #err_taylor2 = np.array(errorL4_Taylor2)
+    #err_mini = np.array(errorL4_Mini)
+    #err_p1p1 = np.array(errorL4_p1p1)
+    #err_p1p1 = np.array([0.244399,0.171503,0.12124,0.0857048,0.060589])
+    
     #print table
     print_convergence_table(h, errorL4_Taylor2, "Taylor-Hood")
     print_convergence_table(h, errorL4_Mini, "Mini-Elements")
@@ -193,6 +185,36 @@ def main():
     save_convergence_table(h, errorL4_Mini, "mini-elements.txt", title="")
     save_convergence_table(h, errorL4_p1p1, "p1p1.txt", title="")
     
+    #grafico de las g_h
+    #plt.figure(2)
+    #plt.grid(True, alpha=0.1)
+    #plt.title(r'Regularization functions', fontsize=14)
+    #X = np.linspace(-1,1,num=1000)
+    #Y = np.ones_like(X) * 0.2
+    #f1 = IfPos(x - (-1),IfPos(x - (-1+h_max[1]),IfPos(x - (1-h_max[1]), (1-x)/h_max[1], 1),(x+1)/h_max[1]), 0)
+    #f4 = IfPos(x - (-1),IfPos(x - (-1+h_max[4]),IfPos(x - (1-h_max[4]), (1-x)/h_max[4], 1),(x+1)/h_max[4]), 0)
+    #plt.plot(X, f1(meshes[1](X, Y)),label = rf"$g_h$ regularization with $h=1/8$")
+    #plt.plot(X, f4(meshes[4](X, Y)),label = rf"$g_h$ regularization with $h=1/64$")
+    #plt.legend()
+    #plt.savefig('gh_plot.png', dpi=150)
+    #print("  Functions regularization plots saved to 'gh_plot.png'")
+
+    #vtk = VTKOutput(meshes[3],
+    #            coefs=[solutions_Taylor2[3],solutions_Mini[3],solutions_p1p1[3]],
+    #            names = ["TaylorHood","MiniElementes","P1P1"],
+    #            filename="velocity_reg_example",
+    #            subdivision=2)
+    # Exporting the results:
+    #vtk.Do()
+    
+    # Final summary
+    #print("\n" + "="*70)
+    #print("SIMULATION COMPLETE")
+    #print("="*70)
+    #print(f"✓ Converged in {info['iterations']} iterations")
+    #print(f"✓ Final error: {info['final_error']:.2e}")
+    #print(f"✓ Solution ready for visualization")
+    #print("="*70)
     
     # Keep GUI open
     input("\nPress Enter to close visualization and exit...")
